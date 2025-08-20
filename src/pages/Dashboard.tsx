@@ -2,6 +2,7 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Calendar, 
   Users, 
@@ -10,15 +11,22 @@ import {
   Clock,
   Star,
   Plus,
-  ArrowRight
+  ArrowRight,
+  Package,
+  UserPlus
 } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { useDashboardData, useLowStockProducts } from '@/hooks/useApi';
+import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
-  // Mock data - replace with real data later
+  const { data: dashboardData, isLoading: isDashboardLoading } = useDashboardData();
+  const { data: lowStockProducts } = useLowStockProducts();
+
   const stats = [
     {
       title: "Today's Revenue",
-      value: "$2,847",
+      value: isDashboardLoading ? "..." : `$${dashboardData?.todayRevenue.toLocaleString()}`,
       change: "+12.5% from yesterday",
       changeType: "positive" as const,
       icon: DollarSign,
@@ -26,26 +34,26 @@ export default function Dashboard() {
     },
     {
       title: "Appointments Today",
-      value: "24",
+      value: isDashboardLoading ? "..." : dashboardData?.todayAppointments.toString() || "0",
       change: "3 pending confirmations",
       changeType: "neutral" as const,
       icon: Calendar,
       variant: "secondary" as const,
     },
     {
-      title: "Active Customers",
-      value: "1,247",
-      change: "+8 new this week",
-      changeType: "positive" as const,
-      icon: Users,
+      title: "Products Low Stock",
+      value: lowStockProducts?.length.toString() || "0",
+      change: "Need restocking",
+      changeType: lowStockProducts && lowStockProducts.length > 0 ? "negative" as const : "neutral" as const,
+      icon: Package,
       variant: "accent" as const,
     },
     {
-      title: "Monthly Growth",
-      value: "18.2%",
+      title: "New Customers This Month",
+      value: isDashboardLoading ? "..." : dashboardData?.newCustomersThisMonth.toString() || "0",
       change: "vs last month",
       changeType: "positive" as const,
-      icon: TrendingUp,
+      icon: UserPlus,
       variant: "default" as const,
     },
   ];
@@ -129,6 +137,84 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Charts and Data */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Chart */}
+        <Card className="card-premium">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-primary" />
+              Revenue Last 30 Days
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isDashboardLoading ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={dashboardData?.revenueData}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    className="text-xs"
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => `$${value}`}
+                    className="text-xs"
+                  />
+                  <Tooltip 
+                    formatter={(value) => [`$${value}`, 'Revenue']}
+                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Service Mix Chart */}
+        <Card className="card-premium">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Star className="w-5 h-5 mr-2 text-secondary-dark" />
+              Top Services (30 Days)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isDashboardLoading ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={dashboardData?.servicesMix}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis 
+                    dataKey="name" 
+                    tickFormatter={(value) => value.length > 10 ? `${value.substring(0, 10)}...` : value}
+                    className="text-xs"
+                  />
+                  <YAxis className="text-xs" />
+                  <Tooltip 
+                    formatter={(value, name) => [
+                      name === 'count' ? `${value} bookings` : `$${value}`, 
+                      name === 'count' ? 'Bookings' : 'Revenue'
+                    ]}
+                  />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Appointments */}
@@ -138,9 +224,11 @@ export default function Dashboard() {
               <Clock className="w-5 h-5 mr-2 text-primary" />
               Today's Appointments
             </CardTitle>
-            <Button variant="ghost" size="sm" className="hover:bg-accent/50">
-              View All
-              <ArrowRight className="w-4 h-4 ml-2" />
+            <Button variant="ghost" size="sm" className="hover:bg-accent/50" asChild>
+              <Link to="/appointments">
+                View All
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -181,14 +269,18 @@ export default function Dashboard() {
                 <Plus className="w-4 h-4 mr-2" />
                 Book Appointment
               </Button>
-              <Button variant="outline" className="w-full justify-start hover:bg-accent/50">
-                <Users className="w-4 h-4 mr-2" />
-                Add Customer
-              </Button>
-              <Button variant="outline" className="w-full justify-start hover:bg-accent/50">
-                <DollarSign className="w-4 h-4 mr-2" />
-                Process Payment
-              </Button>
+          <Button variant="outline" className="w-full justify-start hover:bg-accent/50" asChild>
+            <Link to="/customers">
+              <Users className="w-4 h-4 mr-2" />
+              Add Customer
+            </Link>
+          </Button>
+          <Button variant="outline" className="w-full justify-start hover:bg-accent/50" asChild>
+            <Link to="/billing">
+              <DollarSign className="w-4 h-4 mr-2" />
+              Process Payment
+            </Link>
+          </Button>
             </CardContent>
           </Card>
 
@@ -201,24 +293,23 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {[
-                { name: "Hair Styling", bookings: 45, revenue: "$1,350" },
-                { name: "Facial Treatment", bookings: 32, revenue: "$960" },
-                { name: "Manicure", bookings: 28, revenue: "$420" },
-                { name: "Hair Color", bookings: 24, revenue: "$1,200" },
-              ].map((service, index) => (
+              {dashboardData?.servicesMix.slice(0, 4).map((service, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div>
                     <div className="font-medium text-sm">{service.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {service.bookings} bookings
+                      {service.count} bookings
                     </div>
                   </div>
                   <div className="text-sm font-semibold text-success">
-                    {service.revenue}
+                    ${service.revenue.toLocaleString()}
                   </div>
                 </div>
-              ))}
+              )) || (
+                Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={index} className="h-12 w-full" />
+                ))
+              )}
             </CardContent>
           </Card>
         </div>
