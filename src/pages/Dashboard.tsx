@@ -18,6 +18,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useDashboardData, useLowStockProducts } from '@/hooks/useApi';
 import { Link } from 'react-router-dom';
+import { formatCurrency } from '@/lib/currency';
 
 export default function Dashboard() {
   const { data: dashboardData, isLoading: isDashboardLoading } = useDashboardData();
@@ -26,7 +27,7 @@ export default function Dashboard() {
   const stats = [
     {
       title: "Today's Revenue",
-      value: isDashboardLoading ? "..." : `$${dashboardData?.todayRevenue.toLocaleString()}`,
+      value: isDashboardLoading ? "..." : formatCurrency(dashboardData?.todayRevenue || 0),
       change: "+12.5% from yesterday",
       changeType: "positive" as const,
       icon: DollarSign,
@@ -160,11 +161,11 @@ export default function Dashboard() {
                     className="text-xs"
                   />
                   <YAxis 
-                    tickFormatter={(value) => `$${value}`}
+                    tickFormatter={(value) => formatCurrency(value)}
                     className="text-xs"
                   />
                   <Tooltip 
-                    formatter={(value) => [`$${value}`, 'Revenue']}
+                    formatter={(value) => [formatCurrency(Number(value)), 'Revenue']}
                     labelFormatter={(label) => new Date(label).toLocaleDateString()}
                   />
                   <Line 
@@ -203,7 +204,7 @@ export default function Dashboard() {
                   <YAxis className="text-xs" />
                   <Tooltip 
                     formatter={(value, name) => [
-                      name === 'count' ? `${value} bookings` : `$${value}`, 
+                      name === 'count' ? `${value} bookings` : formatCurrency(Number(value)), 
                       name === 'count' ? 'Bookings' : 'Revenue'
                     ]}
                   />
@@ -302,7 +303,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className="text-sm font-semibold text-success">
-                    ${service.revenue.toLocaleString()}
+                    {formatCurrency(service.revenue)}
                   </div>
                 </div>
               )) || (
