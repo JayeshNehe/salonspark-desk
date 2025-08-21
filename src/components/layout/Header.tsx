@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -9,9 +9,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useAuth } from "@/providers/AuthProvider";
 import { Bell, Search, User, LogOut, Settings } from "lucide-react";
 
 export function Header() {
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
     <header className="h-16 border-b border-border/50 bg-background/95 backdrop-blur-md">
       <div className="flex items-center justify-between px-6 h-full">
@@ -19,16 +28,19 @@ export function Header() {
         <div className="flex items-center space-x-4 flex-1 max-w-md">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
+            <Input
               type="text"
               placeholder="Search customers, appointments..."
-              className="w-full pl-10 pr-4 py-2 bg-muted/50 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-smooth"
+              className="w-full pl-10 bg-muted/50 border-border/50"
             />
           </div>
         </div>
 
         {/* Right side */}
         <div className="flex items-center space-x-4">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+          
           {/* Notifications */}
           <Button variant="ghost" size="sm" className="relative hover:bg-accent/50">
             <Bell className="w-4 h-4" />
@@ -45,9 +57,8 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar className="h-10 w-10 border-2 border-primary/20">
-                  <AvatarImage src="/placeholder-avatar.jpg" alt="User" />
                   <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                    AD
+                    {user?.email?.charAt(0).toUpperCase() || <User className="w-4 h-4" />}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -55,9 +66,11 @@ export function Header() {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Admin User</p>
+                  <p className="text-sm font-medium leading-none">
+                    {user?.user_metadata?.first_name || 'User'}
+                  </p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    admin@salonspark.com
+                    {user?.email}
                   </p>
                 </div>
               </DropdownMenuLabel>
@@ -71,7 +84,10 @@ export function Header() {
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
+              <DropdownMenuItem 
+                className="cursor-pointer text-destructive focus:text-destructive"
+                onClick={handleSignOut}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
