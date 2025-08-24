@@ -120,13 +120,17 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex space-x-3">
-          <Button variant="outline" className="hover:bg-accent/50">
-            <Calendar className="w-4 h-4 mr-2" />
-            View Calendar
+          <Button variant="outline" className="hover:bg-accent/50" asChild>
+            <Link to="/appointments">
+              <Calendar className="w-4 w-4 mr-2" />
+              View Calendar
+            </Link>
           </Button>
-          <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-primary">
-            <Plus className="w-4 h-4 mr-2" />
-            New Appointment
+          <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-primary" asChild>
+            <Link to="/appointments">
+              <Plus className="w-4 h-4 mr-2" />
+              New Appointment
+            </Link>
           </Button>
         </div>
       </div>
@@ -266,9 +270,11 @@ export default function Dashboard() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button className="w-full justify-start bg-gradient-primary hover:bg-gradient-primary/90">
-                <Plus className="w-4 h-4 mr-2" />
-                Book Appointment
+              <Button className="w-full justify-start bg-gradient-primary hover:bg-gradient-primary/90" asChild>
+                <Link to="/appointments">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Book Appointment
+                </Link>
               </Button>
           <Button variant="outline" className="w-full justify-start hover:bg-accent/50" asChild>
             <Link to="/customers">
