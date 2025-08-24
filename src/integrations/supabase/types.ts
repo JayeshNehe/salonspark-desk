@@ -18,6 +18,8 @@ export type Database = {
         Row: {
           appointment_date: string
           appointment_time: string
+          billing_generated: boolean | null
+          billing_id: string | null
           created_at: string | null
           customer_id: string
           duration_minutes: number
@@ -32,6 +34,8 @@ export type Database = {
         Insert: {
           appointment_date: string
           appointment_time: string
+          billing_generated?: boolean | null
+          billing_id?: string | null
           created_at?: string | null
           customer_id: string
           duration_minutes: number
@@ -46,6 +50,8 @@ export type Database = {
         Update: {
           appointment_date?: string
           appointment_time?: string
+          billing_generated?: boolean | null
+          billing_id?: string | null
           created_at?: string | null
           customer_id?: string
           duration_minutes?: number
@@ -329,6 +335,72 @@ export type Database = {
           },
         ]
       }
+      salon_profiles: {
+        Row: {
+          address: string
+          business_license: string | null
+          city: string
+          country: string
+          created_at: string
+          description: string | null
+          email: string
+          id: string
+          operating_hours: Json | null
+          owner_name: string
+          phone: string
+          salon_name: string
+          services_offered: string[] | null
+          social_media: Json | null
+          state: string
+          updated_at: string
+          user_id: string
+          website: string | null
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          business_license?: string | null
+          city: string
+          country?: string
+          created_at?: string
+          description?: string | null
+          email: string
+          id?: string
+          operating_hours?: Json | null
+          owner_name: string
+          phone: string
+          salon_name: string
+          services_offered?: string[] | null
+          social_media?: Json | null
+          state: string
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          business_license?: string | null
+          city?: string
+          country?: string
+          created_at?: string
+          description?: string | null
+          email?: string
+          id?: string
+          operating_hours?: Json | null
+          owner_name?: string
+          phone?: string
+          salon_name?: string
+          services_offered?: string[] | null
+          social_media?: Json | null
+          state?: string
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          zip_code?: string
+        }
+        Relationships: []
+      }
       service_categories: {
         Row: {
           created_at: string | null
@@ -483,6 +555,62 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_type: string
+          salon_id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type: string
+          salon_id: string
+          status: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: string
+          salon_id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salon_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -498,6 +626,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_show"
+        | "waiting"
       payment_method: "cash" | "card" | "upi" | "wallet"
       payment_status: "pending" | "paid" | "refunded" | "failed"
       service_status: "active" | "inactive"
@@ -637,6 +766,7 @@ export const Constants = {
         "completed",
         "cancelled",
         "no_show",
+        "waiting",
       ],
       payment_method: ["cash", "card", "upi", "wallet"],
       payment_status: ["pending", "paid", "refunded", "failed"],
