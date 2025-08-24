@@ -10,7 +10,9 @@ interface Appointment {
   appointment_date: string;
   appointment_time: string;
   duration_minutes: number;
-  status: 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
+  status: 'scheduled' | 'confirmed' | 'waiting' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
+  billing_generated: boolean;
+  billing_id?: string;
   notes?: string;
   total_amount: number;
   created_at: string;
@@ -86,6 +88,39 @@ export function useCreateAppointment() {
       toast({
         title: "Error",
         description: error.message || "Failed to create appointment",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useUpdateAppointment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Appointment>) => {
+      const { data, error } = await supabase
+        .from('appointments')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      toast({
+        title: "Success",
+        description: "Appointment updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update appointment",
         variant: "destructive",
       });
     },

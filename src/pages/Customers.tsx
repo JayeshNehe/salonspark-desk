@@ -6,7 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from '@/components/ui/badge';
+import { formatCurrency } from '@/lib/currency';
 import { Plus, Search, Phone, Mail, Users } from "lucide-react";
+import { QuickAppointmentDialog } from '@/components/QuickAppointmentDialog';
 import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
 
 export default function Customers() {
@@ -208,9 +211,15 @@ export default function Customers() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
+                      <div className="flex gap-2">
+                        <QuickAppointmentDialog 
+                          customerId={customer.id}
+                          customerName={`${customer.first_name} ${customer.last_name}`}
+                        />
+                        <Button variant="outline" size="sm">
+                          View Details
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
