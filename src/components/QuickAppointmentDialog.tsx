@@ -55,7 +55,8 @@ export function QuickAppointmentDialog({ customerId, customerName, trigger }: Qu
         duration_minutes: selectedService.duration_minutes,
         status: 'scheduled',
         notes: formData.notes,
-        total_amount: selectedService.price
+        total_amount: selectedService.price,
+        billing_generated: false
       });
 
       setIsOpen(false);

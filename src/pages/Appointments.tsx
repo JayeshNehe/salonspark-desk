@@ -43,7 +43,8 @@ export default function Appointments() {
       ...formData,
       duration_minutes: selectedService.duration_minutes,
       total_amount: selectedService.price,
-      status: 'scheduled'
+      status: 'scheduled',
+      billing_generated: false
     });
     
     setIsDialogOpen(false);
