@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useCreateSalonProfile, useCreateSubscription, useSalonProfile } from '@/hooks/useSalonProfile';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Star, Zap } from 'lucide-react';
+import { Check, Crown, Star, Zap, ArrowLeft, UserPlus } from 'lucide-react';
 
 const plans = [
   {
@@ -60,9 +60,13 @@ const plans = [
 ];
 
 export default function SalonRegistration() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0); // Start with step 0 for sign up
   const [selectedPlan, setSelectedPlan] = useState('premium');
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [formData, setFormData] = useState({
     salon_name: '',
     owner_name: '',
@@ -79,26 +83,55 @@ export default function SalonRegistration() {
     services_offered: [] as string[]
   });
 
-  const { user } = useAuth();
+  const { user, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: salonProfile, isLoading } = useSalonProfile();
   const createSalonProfile = useCreateSalonProfile();
   const createSubscription = useCreateSubscription();
 
-  // Redirect if already has salon profile
-  if (isLoading) return <div>Loading...</div>;
-  if (salonProfile) return <Navigate to="/" replace />;
-
-  if (!user) return <Navigate to="/auth" replace />;
+  // Redirect if already has salon profile and user is authenticated
+  useEffect(() => {
+    if (user && salonProfile && !isLoading) {
+      navigate('/', { replace: true });
+    }
+  }, [user, salonProfile, isLoading, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const { error } = await signUp(email, password, {
+      first_name: firstName,
+      last_name: lastName,
+    });
+    
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create account",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Account created successfully! Please complete your salon registration.",
+      });
+      setStep(1);
+    }
+    
+    setLoading(false);
+  };
+
   const handleSalonRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+    
     setLoading(true);
 
     try {
@@ -125,6 +158,99 @@ export default function SalonRegistration() {
       setLoading(false);
     }
   };
+
+  if (step === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+        <Card className="w-full max-w-md card-premium">
+          <CardHeader>
+            <div className="flex items-center gap-2 mb-4">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back
+              </Button>
+            </div>
+            <CardTitle className="text-2xl text-center bg-gradient-primary bg-clip-text text-transparent">
+              Create Your Account
+            </CardTitle>
+            <CardDescription className="text-center">
+              Sign up to register your salon and get started
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSignUp} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first-name">First Name *</Label>
+                  <Input
+                    id="first-name"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="last-name">Last Name *</Label>
+                  <Input
+                    id="last-name"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-email">Email *</Label>
+                <Input
+                  id="signup-email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-password">Password *</Label>
+                <Input
+                  id="signup-password"
+                  type="password"
+                  placeholder="Create a password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-primary hover:bg-gradient-primary/90"
+                disabled={loading}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                {loading ? "Creating Account..." : "Create Account"}
+              </Button>
+            </form>
+            
+            <div className="mt-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                Already have an account?{' '}
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto font-semibold text-primary"
+                  onClick={() => navigate('/auth')}
+                >
+                  Sign in here
+                </Button>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (step === 1) {
     return (
