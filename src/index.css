@@ -206,21 +206,4 @@
   .card-premium {
     @apply bg-gradient-card shadow-soft border-0 rounded-xl p-6;
   }
-
-  /* Interactive animations */
-  .hover-scale {
-    @apply transition-transform duration-300 hover:scale-105;
-  }
-
-  .animate-fade-in {
-    @apply animate-[fade-in_0.6s_ease-out_forwards];
-  }
-
-  .animate-scale-in {
-    @apply animate-[scale-in_0.5s_ease-out_forwards];
-  }
-
-  .animate-slide-up {
-    @apply animate-[slide-up_0.5s_ease-out_forwards];
-  }
 }
