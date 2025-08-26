@@ -17,6 +17,8 @@ import Staff from "./pages/Staff";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
+import Home from "./pages/Home";
+import SalonRegistration from "./pages/SalonRegistration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,8 +32,10 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              <Route path="/" element={<Home />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+              <Route path="/salon-registration" element={<SalonRegistration />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
               <Route path="/appointments" element={<ProtectedRoute><Layout><Appointments /></Layout></ProtectedRoute>} />
               <Route path="/customers" element={<ProtectedRoute><Layout><Customers /></Layout></ProtectedRoute>} />
               <Route path="/services" element={<ProtectedRoute><Layout><Services /></Layout></ProtectedRoute>} />
