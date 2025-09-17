@@ -17,6 +17,50 @@ export default function Auth() {
   const { user, signIn, signUp } = useAuth();
   const { toast } = useToast();
 
+  // Demo login function
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    // Use demo credentials
+    const demoEmail = 'demo@salon.com';
+    const demoPassword = 'demo123';
+    
+    const { error } = await signIn(demoEmail, demoPassword);
+    
+    if (error) {
+      // If demo user doesn't exist, create it
+      const { error: signUpError } = await signUp(demoEmail, demoPassword, {
+        first_name: 'Demo',
+        last_name: 'User',
+      });
+      
+      if (!signUpError) {
+        // Try signing in again after signup
+        setTimeout(async () => {
+          const { error: secondSignInError } = await signIn(demoEmail, demoPassword);
+          if (!secondSignInError) {
+            toast({
+              title: "Success",
+              description: "Demo account created and logged in!",
+            });
+          }
+        }, 1000);
+      } else {
+        toast({
+          title: "Error",
+          description: signUpError.message || "Failed to create demo account",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "Success",
+        description: "Logged in with demo account!",
+      });
+    }
+    
+    setLoading(false);
+  };
+
   // Redirect if already authenticated
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -81,6 +125,26 @@ export default function Auth() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Demo Login Button */}
+          <div className="space-y-4 mb-6">
+            <Button 
+              onClick={handleDemoLogin}
+              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold"
+              disabled={loading}
+              size="lg"
+            >
+              {loading ? "Logging in..." : "🚀 Quick Demo Login"}
+            </Button>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/50" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+          </div>
+          
           <Tabs defaultValue="signin" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
