@@ -95,7 +95,59 @@ export default function Billing() {
     }
 
     try {
-      // Here you would create a sale in your Supabase database
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Create the sale record
+      const { data: saleData, error: saleError } = await supabase
+        .from('sales')
+        .insert({
+          customer_id: selectedCustomer === 'walk-in' ? null : selectedCustomer || null,
+          subtotal: subtotal,
+          discount_amount: discountAmount,
+          tax_amount: taxAmount,
+          total_amount: total,
+          payment_method: paymentMethod,
+          payment_status: 'paid'
+        })
+        .select()
+        .single();
+
+      if (saleError) throw saleError;
+
+      // Create sale items
+      const saleItems = cart.map(item => ({
+        sale_id: saleData.id,
+        service_id: item.type === 'service' ? item.id : null,
+        product_id: item.type === 'product' ? item.id : null,
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.price * item.quantity
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('sale_items')
+        .insert(saleItems);
+
+      if (itemsError) throw itemsError;
+
+      // Update product stock for products sold
+      for (const item of cart.filter(i => i.type === 'product')) {
+        const { data: currentProduct } = await supabase
+          .from('products')
+          .select('stock_quantity')
+          .eq('id', item.id)
+          .single();
+          
+        if (currentProduct) {
+          await supabase
+            .from('products')
+            .update({ 
+              stock_quantity: Math.max(0, currentProduct.stock_quantity - item.quantity)
+            })
+            .eq('id', item.id);
+        }
+      }
+      
       toast({
         title: "Payment Processed",
         description: `Payment of ${formatCurrency(total)} has been processed successfully.`,
@@ -106,10 +158,10 @@ export default function Billing() {
       setSelectedCustomer('');
       setDiscountAmount(0);
       setPaymentMethod('cash');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to process payment. Please try again.",
+        description: error.message || "Failed to process payment. Please try again.",
         variant: "destructive",
       });
     }

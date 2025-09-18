@@ -25,9 +25,17 @@ import {
   Trash2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useBusinessSettings, useOperationalSettings, useNotificationSettings, useSecuritySettings, useDataExport, useDataImport } from '@/hooks/useSettings';
 
 export default function Settings() {
   const { toast } = useToast();
+  const saveBusinessSettings = useBusinessSettings();
+  const saveOperationalSettings = useOperationalSettings();
+  const saveNotificationSettings = useNotificationSettings();
+  const saveSecuritySettings = useSecuritySettings();
+  const exportData = useDataExport();
+  const importData = useDataImport();
+  
   const [businessSettings, setBusinessSettings] = useState({
     name: 'Elite Salon & Spa',
     description: 'Premium beauty and wellness services',
@@ -69,46 +77,36 @@ export default function Settings() {
   });
 
   const handleSaveBusinessSettings = () => {
-    // Here you would save to your backend/Supabase
-    toast({
-      title: "Settings Saved",
-      description: "Business settings have been updated successfully.",
-    });
+    saveBusinessSettings.mutate(businessSettings);
   };
 
   const handleSaveOperationalSettings = () => {
-    toast({
-      title: "Settings Saved",
-      description: "Operational settings have been updated successfully.",
-    });
+    saveOperationalSettings.mutate(operationalSettings);
   };
 
   const handleSaveNotifications = () => {
-    toast({
-      title: "Settings Saved", 
-      description: "Notification preferences have been updated.",
-    });
+    saveNotificationSettings.mutate(notifications);
   };
 
   const handleSaveSecurity = () => {
-    toast({
-      title: "Settings Saved",
-      description: "Security settings have been updated.",
-    });
+    saveSecuritySettings.mutate(security);
   };
 
   const handleDataExport = () => {
-    toast({
-      title: "Export Started",
-      description: "Your data export has been initiated. You'll receive an email when ready.",
-    });
+    exportData.mutate();
   };
 
   const handleDataImport = () => {
-    toast({
-      title: "Import Started", 
-      description: "Data import process has been initiated.",
-    });
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,.xlsx,.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        importData.mutate(file);
+      }
+    };
+    input.click();
   };
 
   return (
@@ -260,7 +258,9 @@ export default function Settings() {
                 </div>
               </div>
 
-              <Button onClick={handleSaveBusinessSettings}>Save Business Settings</Button>
+              <Button onClick={handleSaveBusinessSettings} disabled={saveBusinessSettings.isPending}>
+                {saveBusinessSettings.isPending ? 'Saving...' : 'Save Business Settings'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -402,7 +402,9 @@ export default function Settings() {
                 )}
               </div>
 
-              <Button onClick={handleSaveOperationalSettings}>Save Operational Settings</Button>
+              <Button onClick={handleSaveOperationalSettings} disabled={saveOperationalSettings.isPending}>
+                {saveOperationalSettings.isPending ? 'Saving...' : 'Save Operational Settings'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -442,7 +444,9 @@ export default function Settings() {
                 </div>
               ))}
 
-              <Button onClick={handleSaveNotifications}>Save Notification Settings</Button>
+              <Button onClick={handleSaveNotifications} disabled={saveNotificationSettings.isPending}>
+                {saveNotificationSettings.isPending ? 'Saving...' : 'Save Notification Settings'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -515,7 +519,9 @@ export default function Settings() {
                 />
               </div>
 
-              <Button onClick={handleSaveSecurity}>Save Security Settings</Button>
+              <Button onClick={handleSaveSecurity} disabled={saveSecuritySettings.isPending}>
+                {saveSecuritySettings.isPending ? 'Saving...' : 'Save Security Settings'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -535,8 +541,8 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Export your business data for backup or migration purposes.
                   </p>
-                  <Button onClick={handleDataExport} variant="outline">
-                    Export All Data
+                  <Button onClick={handleDataExport} variant="outline" disabled={exportData.isPending}>
+                    {exportData.isPending ? 'Exporting...' : 'Export All Data'}
                   </Button>
                 </div>
 
@@ -547,8 +553,8 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Import data from external systems or restore from backup.
                   </p>
-                  <Button onClick={handleDataImport} variant="outline">
-                    Import Data
+                  <Button onClick={handleDataImport} variant="outline" disabled={importData.isPending}>
+                    {importData.isPending ? 'Importing...' : 'Import Data'}
                   </Button>
                 </div>
 

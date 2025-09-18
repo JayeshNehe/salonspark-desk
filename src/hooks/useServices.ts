@@ -69,3 +69,66 @@ export function useCreateService() {
     },
   });
 }
+export function useUpdateService() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<Service, 'id' | 'created_at' | 'updated_at' | 'service_categories'>> }) => {
+      const { data: result, error } = await supabase
+        .from('services')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      toast({
+        title: "Success",
+        description: "Service updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update service",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useDeleteService() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('services')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      toast({
+        title: "Success",
+        description: "Service deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete service",
+        variant: "destructive",
+      });
+    },
+  });
+}

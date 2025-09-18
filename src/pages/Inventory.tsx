@@ -10,12 +10,16 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Package, AlertTriangle, IndianRupee } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import { useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
 
 export default function Inventory() {
   const { data: products, isLoading } = useProducts();
   const { data: lowStockProducts } = useLowStockProducts();
   const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
+  const deleteProduct = useDeleteProduct();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   const [newProduct, setNewProduct] = useState({
     name: '',
     description: '',
@@ -31,7 +35,11 @@ export default function Inventory() {
 
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createProduct.mutateAsync(newProduct);
+    if (editingProduct) {
+      await updateProduct.mutateAsync({ id: editingProduct.id, ...newProduct });
+    } else {
+      await createProduct.mutateAsync(newProduct);
+    }
     setNewProduct({
       name: '',
       description: '',
@@ -44,7 +52,31 @@ export default function Inventory() {
       stock_quantity: 0,
       min_stock_level: 10
     });
+    setEditingProduct(null);
     setIsDialogOpen(false);
+  };
+
+  const handleEditProduct = (product: any) => {
+    setEditingProduct(product);
+    setNewProduct({
+      name: product.name,
+      description: product.description || '',
+      brand: product.brand || '',
+      category: product.category || '',
+      barcode: product.barcode || '',
+      supplier: product.supplier || '',
+      cost_price: product.cost_price,
+      selling_price: product.selling_price,
+      stock_quantity: product.stock_quantity,
+      min_stock_level: product.min_stock_level
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      await deleteProduct.mutateAsync(id);
+    }
   };
 
   const getStockStatus = (current: number, minimum: number) => {
@@ -98,7 +130,7 @@ export default function Inventory() {
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
+              <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreateProduct} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -221,10 +253,28 @@ export default function Inventory() {
               </div>
               
               <div className="flex gap-2 pt-4">
-                <Button type="submit" disabled={createProduct.isPending}>
-                  {createProduct.isPending ? 'Creating...' : 'Create Product'}
+                <Button type="submit" disabled={editingProduct ? updateProduct.isPending : createProduct.isPending}>
+                  {editingProduct 
+                    ? (updateProduct.isPending ? 'Updating...' : 'Update Product')
+                    : (createProduct.isPending ? 'Creating...' : 'Create Product')
+                  }
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsDialogOpen(false);
+                  setEditingProduct(null);
+                  setNewProduct({
+                    name: '',
+                    description: '',
+                    brand: '',
+                    category: '',
+                    barcode: '',
+                    supplier: '',
+                    cost_price: 0,
+                    selling_price: 0,
+                    stock_quantity: 0,
+                    min_stock_level: 10
+                  });
+                }}>
                   Cancel
                 </Button>
               </div>
@@ -285,6 +335,19 @@ export default function Inventory() {
                           Category: {product.category}
                         </p>
                       )}
+                      <div className="flex gap-2 mt-3">
+                        <Button size="sm" variant="outline" onClick={() => handleEditProduct(product)}>
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive" 
+                          onClick={() => handleDeleteProduct(product.id)}
+                          disabled={deleteProduct.isPending}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

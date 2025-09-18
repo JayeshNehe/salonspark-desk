@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useServices, useCreateService } from '@/hooks/useServices';
+import { useServices, useCreateService, useUpdateService, useDeleteService } from '@/hooks/useServices';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
