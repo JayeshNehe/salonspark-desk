@@ -7,8 +7,7 @@ import {
   productsApi, 
   appointmentsApi, 
   salesApi, 
-  reportsApi,
-  mockData 
+  reportsApi
 } from '@/services/api';
 import { Client, Staff, Service, Product, Appointment } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +26,31 @@ export const queryKeys = {
 export function useClients(query?: string) {
   return useQuery({
     queryKey: [...queryKeys.clients, query],
-    queryFn: () => query ? clientsApi.search(query) : Promise.resolve(mockData.clients),
+    queryFn: async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      let queryBuilder = supabase.from('customers').select('*');
+      
+      if (query) {
+        queryBuilder = queryBuilder.or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%`);
+      }
+      
+      const { data, error } = await queryBuilder;
+      if (error) throw error;
+      
+      return data?.map(customer => ({
+        id: customer.id,
+        name: `${customer.first_name} ${customer.last_name}`,
+        phone: customer.phone,
+        email: customer.email || '',
+        gender: 'other' as const,
+        allergies: '',
+        notes: customer.notes || '',
+        tags: [],
+        createdAt: new Date(customer.created_at || ''),
+        appointments: [],
+        sales: [],
+      })) || [];
+    },
     staleTime: 30000,
   });
 }
@@ -91,7 +114,20 @@ export function useUpdateClient() {
 export function useStaff() {
   return useQuery({
     queryKey: queryKeys.staff,
-    queryFn: () => Promise.resolve(mockData.staff),
+    queryFn: async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.from('staff').select('*');
+      if (error) throw error;
+      
+      return data?.map(staff => ({
+        id: staff.id,
+        name: `${staff.first_name} ${staff.last_name}`,
+        role: staff.role as 'stylist' | 'beautician' | 'manager',
+        commissionPct: Number(staff.commission_rate) || 0,
+        active: staff.status === 'active',
+        appointments: [],
+      })) || [];
+    },
     staleTime: 60000,
   });
 }
@@ -100,7 +136,28 @@ export function useStaff() {
 export function useServices(activeOnly = false) {
   return useQuery({
     queryKey: [...queryKeys.services, activeOnly],
-    queryFn: () => Promise.resolve(mockData.services.filter(s => !activeOnly || s.active)),
+    queryFn: async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      let queryBuilder = supabase.from('services').select('*');
+      
+      if (activeOnly) {
+        queryBuilder = queryBuilder.eq('status', 'active');
+      }
+      
+      const { data, error } = await queryBuilder;
+      if (error) throw error;
+      
+      return data?.map(service => ({
+        id: service.id,
+        name: service.name,
+        category: service.category_id || 'General',
+        durationM: service.duration_minutes,
+        price: Number(service.price),
+        taxPct: 8,
+        active: service.status === 'active',
+        appointments: [],
+      })) || [];
+    },
     staleTime: 60000,
   });
 }
@@ -109,7 +166,23 @@ export function useServices(activeOnly = false) {
 export function useProducts() {
   return useQuery({
     queryKey: queryKeys.products,
-    queryFn: () => Promise.resolve(mockData.products),
+    queryFn: async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.from('products').select('*');
+      if (error) throw error;
+      
+      return data?.map(product => ({
+        id: product.id,
+        name: product.name,
+        sku: product.barcode || '',
+        category: product.category || 'General',
+        price: Number(product.selling_price),
+        cost: Number(product.cost_price),
+        stockQty: product.stock_quantity,
+        reorderAt: product.min_stock_level || 10,
+        expiryAt: new Date(),
+      })) || [];
+    },
     staleTime: 60000,
   });
 }
@@ -117,7 +190,25 @@ export function useProducts() {
 export function useLowStockProducts() {
   return useQuery({
     queryKey: [...queryKeys.products, 'lowstock'],
-    queryFn: () => Promise.resolve(mockData.products.filter(p => p.stockQty <= p.reorderAt)),
+    queryFn: async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.from('products').select('*');
+      if (error) throw error;
+      
+      // Filter low stock products in JavaScript
+      return data?.filter(product => product.stock_quantity <= (product.min_stock_level || 10))
+        .map(product => ({
+          id: product.id,
+          name: product.name,
+          sku: product.barcode || '',
+          category: product.category || 'General',
+          price: Number(product.selling_price),
+          cost: Number(product.cost_price),
+          stockQty: product.stock_quantity,
+          reorderAt: product.min_stock_level || 10,
+          expiryAt: new Date(),
+        })) || [];
+    },
     staleTime: 30000,
   });
 }
@@ -126,7 +217,39 @@ export function useLowStockProducts() {
 export function useAppointments(filters?: { from?: string; to?: string; staffId?: string }) {
   return useQuery({
     queryKey: [...queryKeys.appointments, filters],
-    queryFn: () => appointmentsApi.getAll(filters),
+    queryFn: async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      let queryBuilder = supabase.from('appointments').select('*');
+      
+      if (filters?.from) {
+        queryBuilder = queryBuilder.gte('appointment_date', filters.from);
+      }
+      if (filters?.to) {
+        queryBuilder = queryBuilder.lte('appointment_date', filters.to);
+      }
+      if (filters?.staffId) {
+        queryBuilder = queryBuilder.eq('staff_id', filters.staffId);
+      }
+      
+      const { data, error } = await queryBuilder;
+      if (error) throw error;
+      
+      return data?.map(appointment => ({
+        id: appointment.id,
+        customerId: appointment.customer_id,
+        customerName: 'Customer',
+        staffId: appointment.staff_id,
+        staffName: 'Staff',
+        serviceId: appointment.service_id,
+        serviceName: 'Service',
+        date: appointment.appointment_date,
+        time: appointment.appointment_time,
+        duration: appointment.duration_minutes,
+        status: appointment.status as 'scheduled' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled' | 'no-show',
+        totalAmount: Number(appointment.total_amount),
+        notes: appointment.notes || '',
+      })) || [];
+    },
     staleTime: 30000,
   });
 }
@@ -195,30 +318,45 @@ export function useMonthlyReport(month: string) {
   });
 }
 
-// Mock data for dashboard KPIs
+// Dashboard data hook - using real data instead of mock
 export function useDashboardData() {
   return useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
-      // Mock API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Get today's date for filtering
+      const today = new Date().toISOString().split('T')[0];
+      const thisMonth = new Date().toISOString().slice(0, 7);
+      
+      // Fetch today's appointments
+      const { data: todayAppointments } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('appointment_date', today);
+      
+      // Fetch this month's customers
+      const { data: thisMonthCustomers } = await supabase
+        .from('customers')
+        .select('*')
+        .gte('created_at', `${thisMonth}-01`);
+        
+      // Fetch sales data for revenue
+      const { data: sales } = await supabase
+        .from('sales')
+        .select('*')
+        .gte('created_at', today);
+        
+      // Calculate revenue
+      const todayRevenue = sales?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
       
       return {
-        todayRevenue: 2847,
-        todayAppointments: 24,
-        lowStockCount: 3,
-        newCustomersThisMonth: 18,
-        revenueData: Array.from({ length: 30 }, (_, i) => ({
-          date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          revenue: Math.floor(Math.random() * 3000) + 1000,
-        })),
-        servicesMix: [
-          { name: 'Hair Styling', count: 45, revenue: 3825 },
-          { name: 'Facial Treatment', count: 32, revenue: 2080 },
-          { name: 'Manicure', count: 28, revenue: 840 },
-          { name: 'Hair Color', count: 24, revenue: 2400 },
-          { name: 'Massage', count: 20, revenue: 1600 },
-        ],
+        todayRevenue,
+        todayAppointments: todayAppointments?.length || 0,
+        lowStockCount: 0, // Will be updated by the useLowStockProducts hook
+        newCustomersThisMonth: thisMonthCustomers?.length || 0,
+        revenueData: [], // Empty for new salons
+        servicesMix: [], // Empty for new salons
       };
     },
     staleTime: 60000, // 1 minute

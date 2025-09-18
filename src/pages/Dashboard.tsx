@@ -60,42 +60,7 @@ export default function Dashboard() {
   ];
 
   const todayAppointments = [
-    {
-      id: 1,
-      time: "09:00 AM",
-      customer: "Sarah Johnson",
-      service: "Hair Styling",
-      staff: "Emma Wilson",
-      status: "confirmed",
-      duration: "1h 30m"
-    },
-    {
-      id: 2,
-      time: "10:30 AM",
-      customer: "Michael Chen",
-      service: "Haircut & Beard Trim",
-      staff: "James Rodriguez",
-      status: "in-progress",
-      duration: "45m"
-    },
-    {
-      id: 3,
-      time: "12:00 PM",
-      customer: "Lisa Anderson",
-      service: "Facial Treatment",
-      staff: "Maria Garcia",
-      status: "pending",
-      duration: "1h"
-    },
-    {
-      id: 4,
-      time: "02:30 PM",
-      customer: "David Thompson",
-      service: "Full Service",
-      staff: "Emma Wilson",
-      status: "confirmed",
-      duration: "2h"
-    },
+    // Empty array for new salons - will be populated with real data
   ];
 
   const getStatusColor = (status: string) => {
@@ -155,7 +120,7 @@ export default function Dashboard() {
           <CardContent>
             {isDashboardLoading ? (
               <Skeleton className="h-64 w-full" />
-            ) : (
+            ) : dashboardData?.revenueData && dashboardData.revenueData.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={dashboardData?.revenueData}>
                   <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -181,6 +146,16 @@ export default function Dashboard() {
                   />
                 </LineChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="h-64 flex items-center justify-center">
+                <div className="text-center">
+                  <TrendingUp className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground">No revenue data yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Start processing appointments to see your revenue trends
+                  </p>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -196,7 +171,7 @@ export default function Dashboard() {
           <CardContent>
             {isDashboardLoading ? (
               <Skeleton className="h-64 w-full" />
-            ) : (
+            ) : dashboardData?.servicesMix && dashboardData.servicesMix.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={dashboardData?.servicesMix}>
                   <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -215,6 +190,16 @@ export default function Dashboard() {
                   <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="h-64 flex items-center justify-center">
+                <div className="text-center">
+                  <Star className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground">No service data yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Add services and book appointments to see your top performers
+                  </p>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -237,28 +222,41 @@ export default function Dashboard() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {todayAppointments.map((appointment) => (
-              <div
-                key={appointment.id}
-                className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50 hover:shadow-soft transition-smooth"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="text-center">
-                    <div className="text-sm font-semibold">{appointment.time}</div>
-                    <div className="text-xs text-muted-foreground">{appointment.duration}</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium">{appointment.customer}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {appointment.service} • {appointment.staff}
+            {todayAppointments.length > 0 ? (
+              todayAppointments.map((appointment) => (
+                <div
+                  key={appointment.id}
+                  className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50 hover:shadow-soft transition-smooth"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="text-center">
+                      <div className="text-sm font-semibold">{appointment.time}</div>
+                      <div className="text-xs text-muted-foreground">{appointment.duration}</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{appointment.customer}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {appointment.service} • {appointment.staff}
+                      </div>
                     </div>
                   </div>
+                  <Badge className={getStatusColor(appointment.status)}>
+                    {appointment.status.replace("-", " ")}
+                  </Badge>
                 </div>
-                <Badge className={getStatusColor(appointment.status)}>
-                  {appointment.status.replace("-", " ")}
-                </Badge>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Calendar className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground">No appointments scheduled for today</p>
+                <Button className="mt-3" variant="outline" asChild>
+                  <Link to="/appointments">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Schedule First Appointment
+                  </Link>
+                </Button>
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
 
@@ -300,22 +298,31 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {dashboardData?.servicesMix.slice(0, 4).map((service, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-sm">{service.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {service.count} bookings
+              {dashboardData?.servicesMix && dashboardData.servicesMix.length > 0 ? (
+                dashboardData.servicesMix.slice(0, 4).map((service, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-sm">{service.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {service.count} bookings
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold text-success">
+                      {formatCurrency(service.revenue)}
                     </div>
                   </div>
-                  <div className="text-sm font-semibold text-success">
-                    {formatCurrency(service.revenue)}
-                  </div>
-                </div>
-              )) || (
-                Array.from({ length: 4 }).map((_, index) => (
-                  <Skeleton key={index} className="h-12 w-full" />
                 ))
+              ) : (
+                <div className="text-center py-4">
+                  <Star className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-sm text-muted-foreground">No services data yet</p>
+                  <Button className="mt-2" variant="outline" size="sm" asChild>
+                    <Link to="/services">
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Services
+                    </Link>
+                  </Button>  
+                </div>
               )}
             </CardContent>
           </Card>
