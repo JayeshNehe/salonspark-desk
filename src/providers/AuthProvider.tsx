@@ -14,12 +14,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+// Navigation wrapper component
+function AuthProviderWithNavigation({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  return <AuthProviderInner navigate={navigate} location={location}>{children}</AuthProviderInner>;
+}
+
+function AuthProviderInner({ 
+  children, 
+  navigate, 
+  location 
+}: { 
+  children: React.ReactNode;
+  navigate: ReturnType<typeof useNavigate>;
+  location: ReturnType<typeof useLocation>;
+}) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     let mounted = true;
@@ -105,6 +119,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+// Export the wrapper as AuthProvider
+export const AuthProvider = AuthProviderWithNavigation;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
