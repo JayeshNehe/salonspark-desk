@@ -91,3 +91,139 @@ export function useCreateAppointment() {
     },
   });
 }
+
+export function useUpdateAppointment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<Appointment, 'id' | 'created_at' | 'updated_at' | 'customers' | 'services' | 'staff'>> }) => {
+      const { data: result, error } = await supabase
+        .from('appointments')
+        .update(data)
+        .eq('id', id)
+        .select(`
+          *,
+          customers (
+            first_name,
+            last_name,
+            phone
+          ),
+          services (
+            name,
+            price
+          ),
+          staff (
+            first_name,
+            last_name
+          )
+        `)
+        .single();
+      
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      toast({
+        title: "Success",
+        description: "Appointment updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update appointment",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useCheckInAppointment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (appointmentId: string) => {
+      // First get the appointment details
+      const { data: appointment, error: appointmentError } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          customers (
+            id,
+            first_name,
+            last_name
+          ),
+          services (
+            id,
+            name,
+            price
+          )
+        `)
+        .eq('id', appointmentId)
+        .single();
+
+      if (appointmentError) throw appointmentError;
+
+      // Update appointment status to in_progress
+      const { error: updateError } = await supabase
+        .from('appointments')
+        .update({ status: 'in_progress' })
+        .eq('id', appointmentId);
+
+      if (updateError) throw updateError;
+
+      // Create a sale record for billing
+      const { data: sale, error: saleError } = await supabase
+        .from('sales')
+        .insert([{
+          customer_id: appointment.customer_id,
+          appointment_id: appointmentId,
+          staff_id: appointment.staff_id,
+          subtotal: appointment.total_amount,
+          tax_amount: 0,
+          discount_amount: 0,
+          total_amount: appointment.total_amount,
+          payment_method: 'cash',
+          payment_status: 'pending',
+          sale_date: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (saleError) throw saleError;
+
+      // Create sale item for the service
+      const { error: saleItemError } = await supabase
+        .from('sale_items')
+        .insert([{
+          sale_id: sale.id,
+          service_id: appointment.service_id,
+          quantity: 1,
+          unit_price: appointment.services.price,
+          total_price: appointment.services.price
+        }]);
+
+      if (saleItemError) throw saleItemError;
+
+      return { appointment, sale };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['sales'] }); 
+      toast({
+        title: "Success",
+        description: "Customer checked in and billing created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to check in appointment",
+        variant: "destructive",
+      });
+    },
+  });
+}

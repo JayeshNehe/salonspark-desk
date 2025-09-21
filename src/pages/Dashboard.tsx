@@ -85,12 +85,6 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex space-x-3">
-          <Button variant="outline" className="hover:bg-accent/50" asChild>
-            <Link to="/appointments">
-              <Calendar className="w-4 w-4 mr-2" />
-              View Calendar
-            </Link>
-          </Button>
           <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-primary" asChild>
             <Link to="/appointments">
               <Plus className="w-4 h-4 mr-2" />

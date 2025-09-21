@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Plus, Search, Clock, Users } from "lucide-react";
-import { useAppointments, useCreateAppointment } from "@/hooks/useAppointments";
+import { Calendar, Plus, Search, Clock, Users, Edit, UserCheck } from "lucide-react";
+import { useAppointments, useCreateAppointment, useUpdateAppointment, useCheckInAppointment } from "@/hooks/useAppointments";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useServices } from "@/hooks/useServices";
 import { useStaff } from "@/hooks/useStaff";
@@ -16,6 +16,8 @@ import { formatCurrency } from "@/lib/currency";
 
 export default function Appointments() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState(null);
   const [formData, setFormData] = useState({
     customer_id: '',
     staff_id: '',
@@ -30,11 +32,19 @@ export default function Appointments() {
   const { data: services } = useServices();
   const { data: staff } = useStaff();
   const createAppointment = useCreateAppointment();
+  const updateAppointment = useUpdateAppointment();
+  const checkInAppointment = useCheckInAppointment();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const selectedService = services?.find(s => s.id === formData.service_id);
     if (!selectedService) return;
+
+    // Check if service is active
+    if (selectedService.status === 'inactive') {
+      alert('This service is not active and cannot be booked.');
+      return;
+    }
 
     await createAppointment.mutateAsync({
       ...formData,
@@ -52,6 +62,51 @@ export default function Appointments() {
       appointment_time: '',
       notes: ''
     });
+  };
+
+  const handleEdit = (appointment) => {
+    setEditingAppointment(appointment);
+    setFormData({
+      customer_id: appointment.customer_id,
+      staff_id: appointment.staff_id || '',
+      service_id: appointment.service_id,
+      appointment_date: appointment.appointment_date,
+      appointment_time: appointment.appointment_time,
+      notes: appointment.notes || ''
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAppointment) return;
+
+    const selectedService = services?.find(s => s.id === formData.service_id);
+    if (!selectedService) return;
+
+    await updateAppointment.mutateAsync({
+      id: editingAppointment.id,
+      data: {
+        ...formData,
+        duration_minutes: selectedService.duration_minutes,
+        total_amount: selectedService.price,
+      }
+    });
+    
+    setIsEditDialogOpen(false);
+    setEditingAppointment(null);
+    setFormData({
+      customer_id: '',
+      staff_id: '',
+      service_id: '',
+      appointment_date: '',
+      appointment_time: '',
+      notes: ''
+    });
+  };
+
+  const handleCheckIn = async (appointmentId: string) => {
+    await checkInAppointment.mutateAsync(appointmentId);
   };
 
   const getStatusColor = (status: string) => {
@@ -114,8 +169,9 @@ export default function Appointments() {
                   </SelectTrigger>
                   <SelectContent>
                     {services?.map(service => (
-                      <SelectItem key={service.id} value={service.id}>
+                      <SelectItem key={service.id} value={service.id} disabled={service.status === 'inactive'}>
                         {service.name} - {formatCurrency(service.price)} ({service.duration_minutes}min)
+                        {service.status === 'inactive' && ' (Inactive)'}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -160,6 +216,91 @@ export default function Appointments() {
               </div>
               <Button type="submit" className="w-full" disabled={createAppointment.isPending}>
                 {createAppointment.isPending ? "Booking..." : "Book Appointment"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Appointment Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit Appointment</DialogTitle>
+              <DialogDescription>
+                Update the appointment details.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_customer_id">Customer</Label>
+                <Select value={formData.customer_id} onValueChange={(value) => setFormData(prev => ({ ...prev, customer_id: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers?.map(customer => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.first_name} {customer.last_name} - {customer.phone}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_service_id">Service</Label>
+                <Select value={formData.service_id} onValueChange={(value) => setFormData(prev => ({ ...prev, service_id: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {services?.map(service => (
+                      <SelectItem key={service.id} value={service.id} disabled={service.status === 'inactive'}>
+                        {service.name} - {formatCurrency(service.price)} ({service.duration_minutes}min)
+                        {service.status === 'inactive' && ' (Inactive)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_staff_id">Staff Member</Label>
+                <Select value={formData.staff_id || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, staff_id: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select staff member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staff?.map(member => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.first_name} {member.last_name} - {member.role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_appointment_date">Date</Label>
+                  <Input
+                    id="edit_appointment_date"
+                    type="date"
+                    value={formData.appointment_date}
+                    onChange={(e) => setFormData(prev => ({ ...prev, appointment_date: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_appointment_time">Time</Label>
+                  <Input
+                    id="edit_appointment_time"
+                    type="time"
+                    value={formData.appointment_time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, appointment_time: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+              <Button type="submit" className="w-full" disabled={updateAppointment.isPending}>
+                {updateAppointment.isPending ? "Updating..." : "Update Appointment"}
               </Button>
             </form>
           </DialogContent>
@@ -235,9 +376,27 @@ export default function Appointments() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm">
-                        Edit
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEdit(appointment)}
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Edit
+                        </Button>
+                        {appointment.status === 'scheduled' || appointment.status === 'confirmed' ? (
+                          <Button 
+                            variant="default" 
+                            size="sm"
+                            onClick={() => handleCheckIn(appointment.id)}
+                            disabled={checkInAppointment.isPending}
+                          >
+                            <UserCheck className="w-3 h-3 mr-1" />
+                            Check In
+                          </Button>
+                        ) : null}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -8,13 +8,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Clock, IndianRupee } from 'lucide-react';
+import { Plus, Clock, IndianRupee, Edit, Power, PowerOff } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 
 export default function Services() {
   const { data: services, isLoading } = useServices();
   const createService = useCreateService();
+  const updateService = useUpdateService();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingService, setEditingService] = useState(null);
   const [newService, setNewService] = useState({
     name: '',
     description: '',
@@ -34,6 +37,46 @@ export default function Services() {
       status: 'active'
     });
     setIsDialogOpen(false);
+  };
+
+  const handleEditService = (service) => {
+    setEditingService(service);
+    setNewService({
+      name: service.name,
+      description: service.description || '',
+      duration_minutes: service.duration_minutes,
+      price: service.price,
+      status: service.status
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingService) return;
+    
+    await updateService.mutateAsync({
+      id: editingService.id,
+      data: newService
+    });
+    
+    setNewService({
+      name: '',
+      description: '',
+      duration_minutes: 60,
+      price: 0,
+      status: 'active'
+    });
+    setEditingService(null);
+    setIsEditDialogOpen(false);
+  };
+
+  const toggleServiceStatus = async (service) => {
+    const newStatus = service.status === 'active' ? 'inactive' : 'active';
+    await updateService.mutateAsync({
+      id: service.id,
+      data: { status: newStatus }
+    });
   };
 
   if (isLoading) {
@@ -193,9 +236,123 @@ export default function Services() {
                 </p>
               )}
             </CardContent>
+            <div className="p-4 pt-0 flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleEditService(service)}
+                className="flex-1"
+              >
+                <Edit className="w-3 h-3 mr-1" />
+                Edit
+              </Button>
+              <Button 
+                variant={service.status === 'active' ? 'destructive' : 'default'}
+                size="sm" 
+                onClick={() => toggleServiceStatus(service)}
+                className="flex-1"
+              >
+                {service.status === 'active' ? (
+                  <>
+                    <PowerOff className="w-3 h-3 mr-1" />
+                    Deactivate
+                  </>
+                ) : (
+                  <>
+                    <Power className="w-3 h-3 mr-1" />
+                    Activate
+                  </>
+                )}
+              </Button>
+            </div>
           </Card>
         ))}
       </div>
+
+      {/* Edit Service Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Service</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateService} className="space-y-4">
+            <div>
+              <Label htmlFor="edit_name">Service Name</Label>
+              <Input
+                id="edit_name"
+                value={newService.name}
+                onChange={(e) => setNewService(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g., Hair Cut, Facial, Massage"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_description">Description</Label>
+              <Textarea
+                id="edit_description"
+                value={newService.description}
+                onChange={(e) => setNewService(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Service description..."
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_duration">Duration (minutes)</Label>
+                <Input
+                  id="edit_duration"
+                  type="number"
+                  value={newService.duration_minutes}
+                  onChange={(e) => setNewService(prev => ({ ...prev, duration_minutes: parseInt(e.target.value) }))}
+                  min="15"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_price">Price (₹)</Label>
+                <Input
+                  id="edit_price"
+                  type="number"
+                  value={newService.price}
+                  onChange={(e) => setNewService(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_status">Status</Label>
+              <Select 
+                value={newService.status} 
+                onValueChange={(value: 'active' | 'inactive') => 
+                  setNewService(prev => ({ ...prev, status: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex gap-2 pt-4">
+              <Button type="submit" disabled={updateService.isPending}>
+                {updateService.isPending ? 'Updating...' : 'Update Service'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
       
       {services?.length === 0 && (
         <div className="text-center py-12">
