@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/providers/AuthProvider";
-import { Search, User, LogOut } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 
 export function Header() {
   const { user, signOut } = useAuth();
@@ -24,16 +24,11 @@ export function Header() {
   return (
     <header className="h-16 border-b border-border/50 bg-background/95 backdrop-blur-md">
       <div className="flex items-center justify-between px-6 h-full">
-        {/* Search */}
-        <div className="flex items-center space-x-4 flex-1 max-w-md">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search customers, appointments..."
-              className="w-full pl-10 bg-muted/50 border-border/50"
-            />
-          </div>
+        {/* Logo or Brand */}
+        <div className="flex items-center space-x-4 flex-1">
+          <h2 className="text-lg font-semibold bg-gradient-primary bg-clip-text text-transparent">
+            Salon Management
+          </h2>
         </div>
 
         {/* Right side */}

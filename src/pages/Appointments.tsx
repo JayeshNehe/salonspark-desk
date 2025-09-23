@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Plus, Search, Clock, Users, Edit, UserCheck } from "lucide-react";
+import { Calendar, Plus, Search, Clock, Users, UserCheck } from "lucide-react";
 import { useAppointments, useCreateAppointment, useUpdateAppointment, useCheckInAppointment } from "@/hooks/useAppointments";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useServices } from "@/hooks/useServices";
@@ -16,8 +16,9 @@ import { formatCurrency } from "@/lib/currency";
 
 export default function Appointments() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingAppointment, setEditingAppointment] = useState(null);
+  const [isRescheduleDialogOpen, setIsRescheduleDialogOpen] = useState(false);
+  const [reschedulingAppointment, setReschedulingAppointment] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     customer_id: '',
     staff_id: '',
@@ -34,6 +35,26 @@ export default function Appointments() {
   const createAppointment = useCreateAppointment();
   const updateAppointment = useUpdateAppointment();
   const checkInAppointment = useCheckInAppointment();
+
+  // Filter appointments based on search query
+  const filteredAppointments = useMemo(() => {
+    if (!appointments) return [];
+    if (!searchQuery.trim()) return appointments;
+    
+    const query = searchQuery.toLowerCase();
+    return appointments.filter(appointment => {
+      const customerName = `${appointment.customers?.first_name || ''} ${appointment.customers?.last_name || ''}`.toLowerCase();
+      const customerPhone = appointment.customers?.phone?.toLowerCase() || '';
+      
+      // Get customer details to search birthdate if available
+      const customer = customers?.find(c => c.id === appointment.customer_id);
+      const birthdate = customer?.date_of_birth ? new Date(customer.date_of_birth).toLocaleDateString() : '';
+      
+      return customerName.includes(query) || 
+             customerPhone.includes(query) || 
+             birthdate.includes(query);
+    });
+  }, [appointments, searchQuery, customers]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,8 +85,8 @@ export default function Appointments() {
     });
   };
 
-  const handleEdit = (appointment) => {
-    setEditingAppointment(appointment);
+  const handleReschedule = (appointment) => {
+    setReschedulingAppointment(appointment);
     setFormData({
       customer_id: appointment.customer_id,
       staff_id: appointment.staff_id || '',
@@ -74,27 +95,23 @@ export default function Appointments() {
       appointment_time: appointment.appointment_time,
       notes: appointment.notes || ''
     });
-    setIsEditDialogOpen(true);
+    setIsRescheduleDialogOpen(true);
   };
 
-  const handleEditSubmit = async (e: React.FormEvent) => {
+  const handleRescheduleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingAppointment) return;
-
-    const selectedService = services?.find(s => s.id === formData.service_id);
-    if (!selectedService) return;
+    if (!reschedulingAppointment) return;
 
     await updateAppointment.mutateAsync({
-      id: editingAppointment.id,
+      id: reschedulingAppointment.id,
       data: {
-        ...formData,
-        duration_minutes: selectedService.duration_minutes,
-        total_amount: selectedService.price,
+        appointment_date: formData.appointment_date,
+        appointment_time: formData.appointment_time,
       }
     });
     
-    setIsEditDialogOpen(false);
-    setEditingAppointment(null);
+    setIsRescheduleDialogOpen(false);
+    setReschedulingAppointment(null);
     setFormData({
       customer_id: '',
       staff_id: '',
@@ -131,6 +148,7 @@ export default function Appointments() {
             Manage your salon's appointments and schedule
           </p>
         </div>
+        
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-primary">
@@ -221,67 +239,21 @@ export default function Appointments() {
           </DialogContent>
         </Dialog>
 
-        {/* Edit Appointment Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        {/* Reschedule Appointment Dialog */}
+        <Dialog open={isRescheduleDialogOpen} onOpenChange={setIsRescheduleDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Edit Appointment</DialogTitle>
+              <DialogTitle>Reschedule Appointment</DialogTitle>
               <DialogDescription>
-                Update the appointment details.
+                Update the appointment date and time.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit_customer_id">Customer</Label>
-                <Select value={formData.customer_id} onValueChange={(value) => setFormData(prev => ({ ...prev, customer_id: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers?.map(customer => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.first_name} {customer.last_name} - {customer.phone}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit_service_id">Service</Label>
-                <Select value={formData.service_id} onValueChange={(value) => setFormData(prev => ({ ...prev, service_id: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select service" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services?.map(service => (
-                      <SelectItem key={service.id} value={service.id} disabled={service.status === 'inactive'}>
-                        {service.name} - {formatCurrency(service.price)} ({service.duration_minutes}min)
-                        {service.status === 'inactive' && ' (Inactive)'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit_staff_id">Staff Member</Label>
-                <Select value={formData.staff_id || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, staff_id: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select staff member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {staff?.map(member => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.first_name} {member.last_name} - {member.role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <form onSubmit={handleRescheduleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit_appointment_date">Date</Label>
+                  <Label htmlFor="reschedule_appointment_date">Date</Label>
                   <Input
-                    id="edit_appointment_date"
+                    id="reschedule_appointment_date"
                     type="date"
                     value={formData.appointment_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, appointment_date: e.target.value }))}
@@ -289,9 +261,9 @@ export default function Appointments() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit_appointment_time">Time</Label>
+                  <Label htmlFor="reschedule_appointment_time">Time</Label>
                   <Input
-                    id="edit_appointment_time"
+                    id="reschedule_appointment_time"
                     type="time"
                     value={formData.appointment_time}
                     onChange={(e) => setFormData(prev => ({ ...prev, appointment_time: e.target.value }))}
@@ -300,18 +272,37 @@ export default function Appointments() {
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={updateAppointment.isPending}>
-                {updateAppointment.isPending ? "Updating..." : "Update Appointment"}
+                {updateAppointment.isPending ? "Rescheduling..." : "Reschedule Appointment"}
               </Button>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* Custom Search Bar */}
+      <div className="flex items-center space-x-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search by customer name, phone, or birthdate..."
+            className="w-full pl-10 bg-muted/50 border-border/50"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
       <Card className="card-premium">
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Calendar className="w-5 h-5 mr-2 text-primary" />
-            All Appointments
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Calendar className="w-5 h-5 mr-2 text-primary" />
+              All Appointments
+            </div>
+            <Badge variant="secondary" className="ml-2">
+              {filteredAppointments.length} appointment{filteredAppointments.length !== 1 ? 's' : ''}
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -319,7 +310,7 @@ export default function Appointments() {
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          ) : appointments && appointments.length > 0 ? (
+          ) : filteredAppointments && filteredAppointments.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -333,7 +324,7 @@ export default function Appointments() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {appointments.map((appointment) => (
+                {filteredAppointments.map((appointment) => (
                   <TableRow key={appointment.id}>
                     <TableCell>
                       <div>
@@ -377,25 +368,33 @@ export default function Appointments() {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEdit(appointment)}
-                        >
-                          <Edit className="w-3 h-3 mr-1" />
-                          Edit
-                        </Button>
                         {appointment.status === 'scheduled' || appointment.status === 'confirmed' ? (
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            onClick={() => handleCheckIn(appointment.id)}
-                            disabled={checkInAppointment.isPending}
-                          >
-                            <UserCheck className="w-3 h-3 mr-1" />
-                            Check In
-                          </Button>
-                        ) : null}
+                          <>
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              onClick={() => handleCheckIn(appointment.id)}
+                              disabled={checkInAppointment.isPending}
+                            >
+                              <UserCheck className="w-3 h-3 mr-1" />
+                              Check In
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleReschedule(appointment)}
+                            >
+                              <Clock className="w-3 h-3 mr-1" />
+                              Reschedule
+                            </Button>
+                          </>
+                        ) : appointment.status === 'in_progress' ? (
+                          <Badge variant="secondary">In Progress</Badge>
+                        ) : appointment.status === 'completed' ? (
+                          <Badge variant="default">Completed</Badge>
+                        ) : (
+                          <Badge variant="secondary">{appointment.status}</Badge>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -405,8 +404,12 @@ export default function Appointments() {
           ) : (
             <div className="text-center py-8">
               <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-medium text-lg mb-2">No appointments found</h3>
-              <p className="text-muted-foreground">Start by booking your first appointment.</p>
+              <h3 className="font-medium text-lg mb-2">
+                {searchQuery ? 'No appointments match your search' : 'No appointments found'}
+              </h3>
+              <p className="text-muted-foreground">
+                {searchQuery ? 'Try adjusting your search terms.' : 'Start by booking your first appointment.'}
+              </p>
             </div>
           )}
         </CardContent>
