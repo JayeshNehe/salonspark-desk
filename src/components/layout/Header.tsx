@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/providers/AuthProvider";
-import { Bell, Search, User, LogOut, Settings } from "lucide-react";
+import { Search, User, LogOut } from "lucide-react";
 
 export function Header() {
   const { user, signOut } = useAuth();
@@ -41,16 +41,6 @@ export function Header() {
           {/* Theme Toggle */}
           <ThemeToggle />
           
-          {/* Notifications */}
-          <Button variant="ghost" size="sm" className="relative hover:bg-accent/50">
-            <Bell className="w-4 h-4" />
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs"
-            >
-              3
-            </Badge>
-          </Button>
 
           {/* User menu */}
           <DropdownMenu>
@@ -75,16 +65,7 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="cursor-pointer text-destructive focus:text-destructive"
                 onClick={handleSignOut}
               >
