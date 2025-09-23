@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,10 +23,23 @@ export default function Appointments() {
     customer_id: '',
     staff_id: '',
     service_id: '',
-    appointment_date: '',
+    appointment_date: new Date().toISOString().split('T')[0], // Today's date
     appointment_time: '',
     notes: ''
   });
+
+  // Time selection state
+  const [timeSelection, setTimeSelection] = useState({
+    hour: '9',
+    minute: '00',
+    period: 'AM'
+  });
+
+  // Initialize appointment_time with default time
+  useEffect(() => {
+    const defaultTime = convertTo24Hour('9', '00', 'AM');
+    setFormData(prev => ({ ...prev, appointment_time: defaultTime }));
+  }, []);
 
   const { data: appointments, isLoading } = useAppointments();
   const { data: customers } = useCustomers();
@@ -35,6 +48,17 @@ export default function Appointments() {
   const createAppointment = useCreateAppointment();
   const updateAppointment = useUpdateAppointment();
   const checkInAppointment = useCheckInAppointment();
+
+  // Helper function to convert 12-hour format to 24-hour format
+  const convertTo24Hour = (hour: string, minute: string, period: string): string => {
+    let hour24 = parseInt(hour);
+    if (period === 'AM' && hour24 === 12) {
+      hour24 = 0;
+    } else if (period === 'PM' && hour24 !== 12) {
+      hour24 += 12;
+    }
+    return `${hour24.toString().padStart(2, '0')}:${minute}`;
+  };
 
   // Filter appointments based on search query
   const filteredAppointments = useMemo(() => {
@@ -219,17 +243,61 @@ export default function Appointments() {
                     value={formData.appointment_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, appointment_date: e.target.value }))}
                     required
+                    min={new Date().toISOString().split('T')[0]} // Prevent past dates
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="appointment_time">Time</Label>
-                  <Input
-                    id="appointment_time"
-                    type="time"
-                    value={formData.appointment_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, appointment_time: e.target.value }))}
-                    required
-                  />
+                  <Label>Time</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Select value={timeSelection.hour} onValueChange={(value) => {
+                      setTimeSelection(prev => ({ ...prev, hour: value }));
+                      const time24 = convertTo24Hour(value, timeSelection.minute, timeSelection.period);
+                      setFormData(prev => ({ ...prev, appointment_time: time24 }));
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const hour = i + 1;
+                          return (
+                            <SelectItem key={hour} value={hour.toString()}>
+                              {hour.toString().padStart(2, '0')}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <Select value={timeSelection.minute} onValueChange={(value) => {
+                      setTimeSelection(prev => ({ ...prev, minute: value }));
+                      const time24 = convertTo24Hour(timeSelection.hour, value, timeSelection.period);
+                      setFormData(prev => ({ ...prev, appointment_time: time24 }));
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['00', '15', '30', '45'].map(minute => (
+                          <SelectItem key={minute} value={minute}>
+                            {minute}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={timeSelection.period} onValueChange={(value) => {
+                      setTimeSelection(prev => ({ ...prev, period: value }));
+                      const time24 = convertTo24Hour(timeSelection.hour, timeSelection.minute, value);
+                      setFormData(prev => ({ ...prev, appointment_time: time24 }));
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={createAppointment.isPending}>
