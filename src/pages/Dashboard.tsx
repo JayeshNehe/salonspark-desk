@@ -283,43 +283,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Top Services */}
-          <Card className="card-premium">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Star className="w-5 h-5 mr-2 text-secondary-dark" />
-                Popular Services
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {dashboardData?.servicesMix && dashboardData.servicesMix.length > 0 ? (
-                dashboardData.servicesMix.slice(0, 4).map((service, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-sm">{service.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {service.count} bookings
-                      </div>
-                    </div>
-                    <div className="text-sm font-semibold text-success">
-                      {formatCurrency(service.revenue)}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-4">
-                  <Star className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
-                  <p className="text-sm text-muted-foreground">No services data yet</p>
-                  <Button className="mt-2" variant="outline" size="sm" asChild>
-                    <Link to="/services">
-                      <Plus className="w-3 h-3 mr-1" />
-                      Add Services
-                    </Link>
-                  </Button>  
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
