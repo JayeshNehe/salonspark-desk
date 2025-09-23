@@ -102,7 +102,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts and Data */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Revenue Chart */}
         <Card className="card-premium">
           <CardHeader>
@@ -154,49 +154,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Service Mix Chart */}
-        <Card className="card-premium">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Star className="w-5 h-5 mr-2 text-secondary-dark" />
-              Top Services (30 Days)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isDashboardLoading ? (
-              <Skeleton className="h-64 w-full" />
-            ) : dashboardData?.servicesMix && dashboardData.servicesMix.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={dashboardData?.servicesMix}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis 
-                    dataKey="name" 
-                    tickFormatter={(value) => value.length > 10 ? `${value.substring(0, 10)}...` : value}
-                    className="text-xs"
-                  />
-                  <YAxis className="text-xs" />
-                  <Tooltip 
-                    formatter={(value, name) => [
-                      name === 'count' ? `${value} bookings` : formatCurrency(Number(value)), 
-                      name === 'count' ? 'Bookings' : 'Revenue'
-                    ]}
-                  />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-64 flex items-center justify-center">
-                <div className="text-center">
-                  <Star className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">No service data yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Add services and book appointments to see your top performers
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Main Content Grid */}
