@@ -13,6 +13,9 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { useServices } from "@/hooks/useServices";
 import { useStaff } from "@/hooks/useStaff";
 import { formatCurrency } from "@/lib/currency";
+import { CustomerSearchCombobox } from "@/components/appointments/CustomerSearchCombobox";
+import { DatePicker } from "@/components/appointments/DatePicker";
+import { TimeSlotSelector } from "@/components/appointments/TimeSlotSelector";
 
 export default function Appointments() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -28,37 +31,27 @@ export default function Appointments() {
     notes: ''
   });
 
-  // Time selection state
-  const [timeSelection, setTimeSelection] = useState({
-    hour: '9',
-    minute: '00',
-    period: 'AM'
-  });
-
-  // Initialize appointment_time with default time
-  useEffect(() => {
-    const defaultTime = convertTo24Hour('9', '00', 'AM');
-    setFormData(prev => ({ ...prev, appointment_time: defaultTime }));
-  }, []);
-
   const { data: appointments, isLoading } = useAppointments();
   const { data: customers } = useCustomers();
   const { data: services } = useServices();
   const { data: staff } = useStaff();
+  
+  // Sort services and staff alphabetically
+  const sortedServices = useMemo(() => 
+    services?.slice().sort((a, b) => a.name.localeCompare(b.name)) || [], 
+    [services]
+  );
+  
+  const sortedStaff = useMemo(() => 
+    staff?.slice().sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)) || [], 
+    [staff]
+  );
   const createAppointment = useCreateAppointment();
   const updateAppointment = useUpdateAppointment();
   const checkInAppointment = useCheckInAppointment();
-
-  // Helper function to convert 12-hour format to 24-hour format
-  const convertTo24Hour = (hour: string, minute: string, period: string): string => {
-    let hour24 = parseInt(hour);
-    if (period === 'AM' && hour24 === 12) {
-      hour24 = 0;
-    } else if (period === 'PM' && hour24 !== 12) {
-      hour24 += 12;
-    }
-    return `${hour24.toString().padStart(2, '0')}:${minute}`;
-  };
+  
+  // Get selected service for duration calculation
+  const selectedService = sortedServices.find(s => s.id === formData.service_id);
 
   // Filter appointments based on search query
   const filteredAppointments = useMemo(() => {
@@ -82,7 +75,6 @@ export default function Appointments() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const selectedService = services?.find(s => s.id === formData.service_id);
     if (!selectedService) return;
 
     // Check if service is active
@@ -103,7 +95,7 @@ export default function Appointments() {
       customer_id: '',
       staff_id: '',
       service_id: '',
-      appointment_date: '',
+      appointment_date: new Date().toISOString().split('T')[0],
       appointment_time: '',
       notes: ''
     });
@@ -187,22 +179,15 @@ export default function Appointments() {
                 Schedule a new appointment for your salon.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="customer_id">Customer</Label>
-                <Select value={formData.customer_id} onValueChange={(value) => setFormData(prev => ({ ...prev, customer_id: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers?.map(customer => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.first_name} {customer.last_name} - {customer.phone}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CustomerSearchCombobox 
+                  value={formData.customer_id}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, customer_id: value }))}
+                />
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="service_id">Service</Label>
                 <Select value={formData.service_id} onValueChange={(value) => setFormData(prev => ({ ...prev, service_id: value }))}>
@@ -210,7 +195,7 @@ export default function Appointments() {
                     <SelectValue placeholder="Select service" />
                   </SelectTrigger>
                   <SelectContent>
-                    {services?.map(service => (
+                    {sortedServices.map(service => (
                       <SelectItem key={service.id} value={service.id} disabled={service.status === 'inactive'}>
                         {service.name} - {formatCurrency(service.price)} ({service.duration_minutes}min)
                         {service.status === 'inactive' && ' (Inactive)'}
@@ -219,6 +204,7 @@ export default function Appointments() {
                   </SelectContent>
                 </Select>
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="staff_id">Staff Member</Label>
                 <Select value={formData.staff_id || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, staff_id: value }))}>
@@ -226,7 +212,7 @@ export default function Appointments() {
                     <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
                   <SelectContent>
-                    {staff?.map(member => (
+                    {sortedStaff.map(member => (
                       <SelectItem key={member.id} value={member.id}>
                         {member.first_name} {member.last_name} - {member.role}
                       </SelectItem>
@@ -234,73 +220,40 @@ export default function Appointments() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="appointment_date">Date</Label>
-                  <Input
-                    id="appointment_date"
-                    type="date"
-                    value={formData.appointment_date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, appointment_date: e.target.value }))}
-                    required
-                    min={new Date().toISOString().split('T')[0]} // Prevent past dates
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Time</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Select value={timeSelection.hour} onValueChange={(value) => {
-                      setTimeSelection(prev => ({ ...prev, hour: value }));
-                      const time24 = convertTo24Hour(value, timeSelection.minute, timeSelection.period);
-                      setFormData(prev => ({ ...prev, appointment_time: time24 }));
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => {
-                          const hour = i + 1;
-                          return (
-                            <SelectItem key={hour} value={hour.toString()}>
-                              {hour.toString().padStart(2, '0')}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                    <Select value={timeSelection.minute} onValueChange={(value) => {
-                      setTimeSelection(prev => ({ ...prev, minute: value }));
-                      const time24 = convertTo24Hour(timeSelection.hour, value, timeSelection.period);
-                      setFormData(prev => ({ ...prev, appointment_time: time24 }));
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {['00', '15', '30', '45'].map(minute => (
-                          <SelectItem key={minute} value={minute}>
-                            {minute}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={timeSelection.period} onValueChange={(value) => {
-                      setTimeSelection(prev => ({ ...prev, period: value }));
-                      const time24 = convertTo24Hour(timeSelection.hour, timeSelection.minute, value);
-                      setFormData(prev => ({ ...prev, appointment_time: time24 }));
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="AM">AM</SelectItem>
-                        <SelectItem value="PM">PM</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+              
+              <div className="space-y-2">
+                <Label>Appointment Date</Label>
+                <DatePicker 
+                  value={formData.appointment_date}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, appointment_date: value }))}
+                />
               </div>
-              <Button type="submit" className="w-full" disabled={createAppointment.isPending}>
+              
+              <div className="space-y-2">
+                <Label>Available Time Slots</Label>
+                <TimeSlotSelector
+                  selectedDate={formData.appointment_date}
+                  serviceDuration={selectedService?.duration_minutes || 0}
+                  selectedTime={formData.appointment_time}
+                  onTimeSelect={(time) => setFormData(prev => ({ ...prev, appointment_time: time }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Input
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Any special requests or notes..."
+                />
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={createAppointment.isPending || !formData.customer_id || !formData.service_id || !formData.appointment_date || !formData.appointment_time}
+              >
                 {createAppointment.isPending ? "Booking..." : "Book Appointment"}
               </Button>
             </form>
