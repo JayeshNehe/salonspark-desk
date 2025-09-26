@@ -26,9 +26,28 @@ export default function Services() {
     status: 'active' as 'active' | 'inactive'
   });
 
+  const [durationHours, setDurationHours] = useState(1);
+  const [durationMinutes, setDurationMinutes] = useState(0);
+
+  // Convert minutes to hours and minutes for display
+  const minutesToHoursAndMinutes = (totalMinutes: number) => {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return { hours, minutes };
+  };
+
+  // Convert hours and minutes to total minutes
+  const hoursAndMinutesToMinutes = (hours: number, minutes: number) => {
+    return (hours * 60) + minutes;
+  };
+
   const handleCreateService = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createService.mutateAsync(newService);
+    const totalMinutes = hoursAndMinutesToMinutes(durationHours, durationMinutes);
+    await createService.mutateAsync({
+      ...newService,
+      duration_minutes: totalMinutes
+    });
     setNewService({
       name: '',
       description: '',
@@ -36,11 +55,16 @@ export default function Services() {
       price: 0,
       status: 'active'
     });
+    setDurationHours(1);
+    setDurationMinutes(0);
     setIsDialogOpen(false);
   };
 
   const handleEditService = (service) => {
     setEditingService(service);
+    const { hours, minutes } = minutesToHoursAndMinutes(service.duration_minutes);
+    setDurationHours(hours);
+    setDurationMinutes(minutes);
     setNewService({
       name: service.name,
       description: service.description || '',
@@ -55,9 +79,13 @@ export default function Services() {
     e.preventDefault();
     if (!editingService) return;
     
+    const totalMinutes = hoursAndMinutesToMinutes(durationHours, durationMinutes);
     await updateService.mutateAsync({
       id: editingService.id,
-      data: newService
+      data: {
+        ...newService,
+        duration_minutes: totalMinutes
+      }
     });
     
     setNewService({
@@ -67,6 +95,8 @@ export default function Services() {
       price: 0,
       status: 'active'
     });
+    setDurationHours(1);
+    setDurationMinutes(0);
     setEditingService(null);
     setIsEditDialogOpen(false);
   };
@@ -149,15 +179,34 @@ export default function Services() {
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="duration">Duration (minutes)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    value={newService.duration_minutes}
-                    onChange={(e) => setNewService(prev => ({ ...prev, duration_minutes: parseInt(e.target.value) }))}
-                    min="15"
-                    required
-                  />
+                  <Label>Duration</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="duration_hours" className="text-xs text-muted-foreground">Hours</Label>
+                      <Input
+                        id="duration_hours"
+                        type="number"
+                        value={durationHours}
+                        onChange={(e) => setDurationHours(parseInt(e.target.value) || 0)}
+                        min="0"
+                        max="12"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="duration_minutes" className="text-xs text-muted-foreground">Minutes</Label>
+                      <Input
+                        id="duration_minutes"
+                        type="number"
+                        value={durationMinutes}
+                        onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 0)}
+                        min="0"
+                        max="59"
+                        step="15"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
                 </div>
                 
                 <div>
@@ -223,7 +272,18 @@ export default function Services() {
               <div className="flex justify-between items-center text-sm">
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
-                  <span>{service.duration_minutes} mins</span>
+                  <span>
+                    {(() => {
+                      const { hours, minutes } = minutesToHoursAndMinutes(service.duration_minutes);
+                      if (hours > 0 && minutes > 0) {
+                        return `${hours}h ${minutes}m`;
+                      } else if (hours > 0) {
+                        return `${hours}h`;
+                      } else {
+                        return `${minutes}m`;
+                      }
+                    })()}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1 font-semibold">
                   <IndianRupee className="h-4 w-4" />
@@ -299,15 +359,34 @@ export default function Services() {
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="edit_duration">Duration (minutes)</Label>
-                <Input
-                  id="edit_duration"
-                  type="number"
-                  value={newService.duration_minutes}
-                  onChange={(e) => setNewService(prev => ({ ...prev, duration_minutes: parseInt(e.target.value) }))}
-                  min="15"
-                  required
-                />
+                <Label>Duration</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="edit_duration_hours" className="text-xs text-muted-foreground">Hours</Label>
+                    <Input
+                      id="edit_duration_hours"
+                      type="number"
+                      value={durationHours}
+                      onChange={(e) => setDurationHours(parseInt(e.target.value) || 0)}
+                      min="0"
+                      max="12"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit_duration_minutes" className="text-xs text-muted-foreground">Minutes</Label>
+                    <Input
+                      id="edit_duration_minutes"
+                      type="number"
+                      value={durationMinutes}
+                      onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 0)}
+                      min="0"
+                      max="59"
+                      step="15"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
               </div>
               
               <div>
