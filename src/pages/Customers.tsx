@@ -138,22 +138,25 @@ export default function Customers() {
         </Dialog>
       </div>
 
+      {/* Custom Search Bar */}
+      <div className="flex items-center space-x-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search by customer name, phone, or email..."
+            className="w-full pl-10 bg-muted/50 border-border/50"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
       <Card className="card-premium">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center">
-              <Users className="w-5 h-5 mr-2 text-primary" />
-              All Customers
-            </span>
-            <div className="relative w-72">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search customers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+          <CardTitle className="flex items-center">
+            <Users className="w-5 h-5 mr-2 text-primary" />
+            All Customers
           </CardTitle>
         </CardHeader>
         <CardContent>
