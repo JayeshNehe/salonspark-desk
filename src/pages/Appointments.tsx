@@ -180,53 +180,57 @@ export default function Appointments() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="customer_id">Customer</Label>
-                <CustomerSearchCombobox 
-                  value={formData.customer_id}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, customer_id: value }))}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="customer_id">Customer</Label>
+                  <CustomerSearchCombobox 
+                    value={formData.customer_id}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, customer_id: value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="service_id">Service</Label>
+                  <Select value={formData.service_id} onValueChange={(value) => setFormData(prev => ({ ...prev, service_id: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sortedServices.map(service => (
+                        <SelectItem key={service.id} value={service.id} disabled={service.status === 'inactive'}>
+                          {service.name} - {formatCurrency(service.price)} ({service.duration_minutes}min)
+                          {service.status === 'inactive' && ' (Inactive)'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="service_id">Service</Label>
-                <Select value={formData.service_id} onValueChange={(value) => setFormData(prev => ({ ...prev, service_id: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select service" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sortedServices.map(service => (
-                      <SelectItem key={service.id} value={service.id} disabled={service.status === 'inactive'}>
-                        {service.name} - {formatCurrency(service.price)} ({service.duration_minutes}min)
-                        {service.status === 'inactive' && ' (Inactive)'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="staff_id">Staff Member</Label>
-                <Select value={formData.staff_id || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, staff_id: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select staff member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sortedStaff.map(member => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.first_name} {member.last_name} - {member.role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Appointment Date</Label>
-                <DatePicker 
-                  value={formData.appointment_date}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, appointment_date: value }))}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="staff_id">Staff Member</Label>
+                  <Select value={formData.staff_id || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, staff_id: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select staff member" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sortedStaff.map(member => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.first_name} {member.last_name} - {member.role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Appointment Date</Label>
+                  <DatePicker 
+                    value={formData.appointment_date}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, appointment_date: value }))}
+                  />
+                </div>
               </div>
               
               <div className="space-y-2">
