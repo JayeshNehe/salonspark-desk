@@ -10,7 +10,7 @@ interface Appointment {
   appointment_date: string;
   appointment_time: string;
   duration_minutes: number;
-  status: 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
+  status: 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show' | 'waiting';
   notes?: string;
   total_amount: number;
   created_at: string;

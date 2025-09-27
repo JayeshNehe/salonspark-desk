@@ -25,8 +25,8 @@ export default function Inventory() {
     description: '',
     brand: '',
     category: '',
-    barcode: '',
     supplier: '',
+    supplier_mobile: '',
     cost_price: 0,
     selling_price: 0,
     stock_quantity: 0,
@@ -45,8 +45,8 @@ export default function Inventory() {
       description: '',
       brand: '',
       category: '',
-      barcode: '',
       supplier: '',
+      supplier_mobile: '',
       cost_price: 0,
       selling_price: 0,
       stock_quantity: 0,
@@ -63,8 +63,8 @@ export default function Inventory() {
       description: product.description || '',
       brand: product.brand || '',
       category: product.category || '',
-      barcode: product.barcode || '',
       supplier: product.supplier || '',
+      supplier_mobile: product.supplier_mobile || '',
       cost_price: product.cost_price,
       selling_price: product.selling_price,
       stock_quantity: product.stock_quantity,
@@ -168,12 +168,13 @@ export default function Inventory() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="barcode">Barcode</Label>
+                  <Label htmlFor="supplier_mobile">Supplier Mobile</Label>
                   <Input
-                    id="barcode"
-                    value={newProduct.barcode}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, barcode: e.target.value }))}
-                    placeholder="Product barcode"
+                    id="supplier_mobile"
+                    value={newProduct.supplier_mobile}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, supplier_mobile: e.target.value }))}
+                    placeholder="Supplier mobile number"
+                    type="tel"
                   />
                 </div>
               </div>
@@ -267,8 +268,8 @@ export default function Inventory() {
                     description: '',
                     brand: '',
                     category: '',
-                    barcode: '',
                     supplier: '',
+                    supplier_mobile: '',
                     cost_price: 0,
                     selling_price: 0,
                     stock_quantity: 0,
