@@ -44,8 +44,10 @@ export default function Billing() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'upi'>('cash');
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isAddServiceDialogOpen, setIsAddServiceDialogOpen] = useState(false);
+  const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
+  const [serviceSearchQuery, setServiceSearchQuery] = useState('');
+  const [productSearchQuery, setProductSearchQuery] = useState('');
 
   const addToCart = (item: { id: string; name: string; type: 'service' | 'product'; price: number }) => {
     const existingItem = cart.find(cartItem => cartItem.id === item.id && cartItem.type === item.type);
@@ -59,7 +61,8 @@ export default function Billing() {
     } else {
       setCart([...cart, { ...item, quantity: 1 }]);
     }
-    setIsAddItemDialogOpen(false);
+    setIsAddServiceDialogOpen(false);
+    setIsAddProductDialogOpen(false);
   };
 
   const updateQuantity = (id: string, type: 'service' | 'product', newQuantity: number) => {
@@ -164,26 +167,27 @@ export default function Billing() {
     }
   };
 
-  const filteredItems = [
-    ...(services?.filter(service => 
-      service.name.toLowerCase().includes(searchQuery.toLowerCase())
-    ).map(service => ({
-      id: service.id,
-      name: service.name,
-      type: 'service' as const,
-      price: service.price,
-      category: 'Service'
-    })) || []),
-    ...(products?.filter(product => 
-      product.name.toLowerCase().includes(searchQuery.toLowerCase())
-    ).map(product => ({
-      id: product.id,
-      name: product.name,
-      type: 'product' as const,
-      price: product.selling_price,
-      category: 'Product'
-    })) || [])
-  ];
+  const filteredServices = services?.filter(service => 
+    service.name.toLowerCase().includes(serviceSearchQuery.toLowerCase())
+  ).map(service => ({
+    id: service.id,
+    name: service.name,
+    type: 'service' as const,
+    price: service.price,
+    description: service.description,
+    duration_minutes: service.duration_minutes
+  })) || [];
+
+  const filteredProducts = products?.filter(product => 
+    product.name.toLowerCase().includes(productSearchQuery.toLowerCase())
+  ).map(product => ({
+    id: product.id,
+    name: product.name,
+    type: 'product' as const,
+    price: product.selling_price,
+    brand: product.brand,
+    stock_quantity: product.stock_quantity
+  })) || [];
 
   return (
     <div className="space-y-6">
@@ -223,57 +227,122 @@ export default function Billing() {
                   <ShoppingCart className="h-5 w-5" />
                   Shopping Cart ({cart.length} items)
                 </div>
-                <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Add Item
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Add Items to Cart</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <Input
-                        placeholder="Search services and products..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                      
-                      <div className="max-h-96 overflow-y-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Type</TableHead>
-                              <TableHead>Price</TableHead>
-                              <TableHead>Action</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {filteredItems.map((item) => (
-                              <TableRow key={`${item.type}-${item.id}`}>
-                                <TableCell>{item.name}</TableCell>
-                                <TableCell>
-                                  <Badge variant={item.type === 'service' ? 'default' : 'secondary'}>
-                                    {item.category}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>{formatCurrency(item.price)}</TableCell>
-                                <TableCell>
-                                  <Button size="sm" onClick={() => addToCart(item)}>
-                                    Add
-                                  </Button>
-                                </TableCell>
+                <div className="flex gap-2">
+                  {/* Add Service Dialog */}
+                  <Dialog open={isAddServiceDialogOpen} onOpenChange={setIsAddServiceDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add/Edit Service
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Add Service to Cart</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <Input
+                          placeholder="Search services..."
+                          value={serviceSearchQuery}
+                          onChange={(e) => setServiceSearchQuery(e.target.value)}
+                        />
+                        
+                        <div className="max-h-96 overflow-y-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Service Name</TableHead>
+                                <TableHead>Duration</TableHead>
+                                <TableHead>Price</TableHead>
+                                <TableHead>Action</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+                            <TableBody>
+                              {filteredServices.map((service) => (
+                                <TableRow key={service.id}>
+                                  <TableCell>
+                                    <div>
+                                      <div className="font-medium">{service.name}</div>
+                                      {service.description && (
+                                        <div className="text-sm text-muted-foreground">{service.description}</div>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{service.duration_minutes} min</TableCell>
+                                  <TableCell>{formatCurrency(service.price)}</TableCell>
+                                  <TableCell>
+                                    <Button size="sm" onClick={() => addToCart(service)}>
+                                      Add
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Add Product Dialog */}
+                  <Dialog open={isAddProductDialogOpen} onOpenChange={setIsAddProductDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add Product
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Add Product to Cart</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <Input
+                          placeholder="Search products..."
+                          value={productSearchQuery}
+                          onChange={(e) => setProductSearchQuery(e.target.value)}
+                        />
+                        
+                        <div className="max-h-96 overflow-y-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Product Name</TableHead>
+                                <TableHead>Brand</TableHead>
+                                <TableHead>Stock</TableHead>
+                                <TableHead>Price</TableHead>
+                                <TableHead>Action</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {filteredProducts.map((product) => (
+                                <TableRow key={product.id}>
+                                  <TableCell className="font-medium">{product.name}</TableCell>
+                                  <TableCell>{product.brand || 'N/A'}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={product.stock_quantity > 0 ? 'default' : 'destructive'}>
+                                      {product.stock_quantity} units
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>{formatCurrency(product.price)}</TableCell>
+                                  <TableCell>
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => addToCart(product)}
+                                      disabled={product.stock_quantity === 0}
+                                    >
+                                      Add
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
