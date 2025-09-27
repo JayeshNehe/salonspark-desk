@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
+import { cn } from "@/lib/utils";
 
 interface TimeSlotSelectorProps {
   selectedDate: string;
@@ -114,8 +115,4 @@ export function TimeSlotSelector({
       )}
     </div>
   );
-}
-
-function cn(...inputs: (string | undefined)[]): string {
-  return inputs.filter(Boolean).join(' ');
 }
