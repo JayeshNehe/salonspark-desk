@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   ShoppingCart, 
   CreditCard, 
-  Receipt, 
   Plus, 
   Minus, 
   IndianRupee,
@@ -25,6 +24,7 @@ import { useServices } from '@/hooks/useServices';
 import { useProducts } from '@/hooks/useProducts';
 import { formatCurrency } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
+import { CustomerSearchCombobox } from '@/components/appointments/CustomerSearchCombobox';
 
 interface CartItem {
   id: string;
@@ -44,7 +44,6 @@ export default function Billing() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'upi'>('cash');
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [taxRate, setTaxRate] = useState(18);
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -80,9 +79,7 @@ export default function Billing() {
   };
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const discountedAmount = subtotal - discountAmount;
-  const taxAmount = (discountedAmount * taxRate) / 100;
-  const total = discountedAmount + taxAmount;
+  const total = subtotal - discountAmount;
 
   const handleProcessPayment = async () => {
     if (cart.length === 0) {
@@ -101,10 +98,10 @@ export default function Billing() {
       const { data: saleData, error: saleError } = await supabase
         .from('sales')
         .insert({
-          customer_id: selectedCustomer === 'walk-in' ? null : selectedCustomer || null,
+          customer_id: selectedCustomer || null,
           subtotal: subtotal,
           discount_amount: discountAmount,
-          tax_amount: taxAmount,
+          tax_amount: 0,
           total_amount: total,
           payment_method: paymentMethod,
           payment_status: 'paid'
@@ -196,15 +193,8 @@ export default function Billing() {
             Billing & POS
           </h1>
           <p className="text-muted-foreground mt-1">
-            Process payments and manage invoices
+            Process payments and manage transactions
           </p>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
-            <Receipt className="h-4 w-4" />
-            View Invoices
-          </Button>
         </div>
       </div>
 
@@ -219,19 +209,10 @@ export default function Billing() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a customer (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="walk-in">Walk-in Customer</SelectItem>
-                  {customers?.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.first_name} {customer.last_name} - {customer.phone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CustomerSearchCombobox
+                value={selectedCustomer}
+                onValueChange={setSelectedCustomer}
+              />
             </CardContent>
           </Card>
 
@@ -393,11 +374,6 @@ export default function Billing() {
                   />
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="tax">Tax ({taxRate}%):</Label>
-                  <span>{formatCurrency(taxAmount)}</span>
-                </div>
-
                 <Separator />
 
                 <div className="flex justify-between text-lg font-bold">
@@ -437,10 +413,6 @@ export default function Billing() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full gap-2">
-                <Receipt className="h-4 w-4" />
-                Print Receipt
-              </Button>
               <Button variant="outline" className="w-full gap-2">
                 <Clock className="h-4 w-4" />
                 Hold Transaction
