@@ -20,6 +20,13 @@ export function TimeSlotSelector({
 }: TimeSlotSelectorProps) {
   const { data: appointments } = useAppointments();
 
+  const formatTimeDisplay = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
   // Generate time slots from 9 AM to 8 PM in 30-minute intervals
   const availableSlots = useMemo(() => {
     if (!selectedDate || !serviceDuration) return [];
@@ -61,12 +68,6 @@ export function TimeSlotSelector({
     return slots;
   }, [selectedDate, serviceDuration, appointments]);
 
-  const formatTimeDisplay = (time: string) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
-  };
 
   if (!selectedDate || !serviceDuration) {
     return (
