@@ -156,14 +156,34 @@ export default function Inventory() {
                 </div>
               </div>
 
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Input
+                  id="category"
+                  value={newProduct.category}
+                  onChange={(e) => setNewProduct(prev => ({ ...prev, category: e.target.value }))}
+                  placeholder="Hair Care, Skin Care, etc."
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Product description..."
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="supplier">Supplier</Label>
                   <Input
-                    id="category"
-                    value={newProduct.category}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, category: e.target.value }))}
-                    placeholder="Hair Care, Skin Care, etc."
+                    id="supplier"
+                    value={newProduct.supplier}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, supplier: e.target.value }))}
+                    placeholder="Supplier name"
                   />
                 </div>
                 
@@ -177,26 +197,6 @@ export default function Inventory() {
                     type="tel"
                   />
                 </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newProduct.description}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Product description..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="supplier">Supplier</Label>
-                <Input
-                  id="supplier"
-                  value={newProduct.supplier}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, supplier: e.target.value }))}
-                  placeholder="Supplier name"
-                />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
