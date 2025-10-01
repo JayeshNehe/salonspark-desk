@@ -43,7 +43,6 @@ function AuthProviderInner({
       (event, session) => {
         if (!mounted) return;
         
-        console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -66,7 +65,6 @@ function AuthProviderInner({
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       
-      console.log('Initial session:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
