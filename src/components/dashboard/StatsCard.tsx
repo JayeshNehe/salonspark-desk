@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface StatsCardProps {
   title: string;
@@ -10,6 +11,7 @@ interface StatsCardProps {
   changeType?: "positive" | "negative" | "neutral";
   icon: LucideIcon;
   variant?: "default" | "primary" | "secondary" | "accent";
+  linkTo?: string;
 }
 
 export function StatsCard({ 
@@ -18,7 +20,8 @@ export function StatsCard({
   change, 
   changeType = "neutral", 
   icon: Icon, 
-  variant = "default" 
+  variant = "default",
+  linkTo
 }: StatsCardProps) {
   const getChangeColor = () => {
     switch (changeType) {
@@ -37,8 +40,8 @@ export function StatsCard({
     }
   };
 
-  return (
-    <Card className="card-premium hover:shadow-medium transition-smooth">
+  const cardContent = (
+    <>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
@@ -58,6 +61,22 @@ export function StatsCard({
           </Badge>
         )}
       </CardContent>
+    </>
+  );
+
+  if (linkTo) {
+    return (
+      <Link to={linkTo} className="block">
+        <Card className="card-premium hover:shadow-medium transition-smooth cursor-pointer">
+          {cardContent}
+        </Card>
+      </Link>
+    );
+  }
+
+  return (
+    <Card className="card-premium hover:shadow-medium transition-smooth">
+      {cardContent}
     </Card>
   );
 }

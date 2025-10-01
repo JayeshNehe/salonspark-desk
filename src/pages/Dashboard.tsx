@@ -5,20 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Calendar, 
-  Users, 
-  DollarSign, 
-  TrendingUp,
+  IndianRupee, 
   Clock,
-  Star,
   Plus,
   ArrowRight,
   Package,
-  UserPlus
+  Users,
 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useDashboardData, useLowStockProducts } from '@/hooks/useApi';
 import { Link } from 'react-router-dom';
-import { formatCurrency } from '@/lib/currency';
 
 export default function Dashboard() {
   const { data: dashboardData, isLoading: isDashboardLoading } = useDashboardData();
@@ -26,20 +21,13 @@ export default function Dashboard() {
 
   const stats = [
     {
-      title: "Today's Revenue",
-      value: isDashboardLoading ? "..." : formatCurrency(dashboardData?.todayRevenue || 0),
-      change: "+12.5% from yesterday",
-      changeType: "positive" as const,
-      icon: DollarSign,
-      variant: "primary" as const,
-    },
-    {
       title: "Appointments Today",
       value: isDashboardLoading ? "..." : dashboardData?.todayAppointments.toString() || "0",
-      change: "3 pending confirmations",
+      change: "Click to view all",
       changeType: "neutral" as const,
       icon: Calendar,
-      variant: "secondary" as const,
+      variant: "primary" as const,
+      linkTo: "/appointments",
     },
     {
       title: "Products Low Stock",
@@ -48,14 +36,7 @@ export default function Dashboard() {
       changeType: lowStockProducts && lowStockProducts.length > 0 ? "negative" as const : "neutral" as const,
       icon: Package,
       variant: "accent" as const,
-    },
-    {
-      title: "New Customers This Month",
-      value: isDashboardLoading ? "..." : dashboardData?.newCustomersThisMonth.toString() || "0",
-      change: "vs last month",
-      changeType: "positive" as const,
-      icon: UserPlus,
-      variant: "default" as const,
+      linkTo: "/inventory",
     },
   ];
 
@@ -95,65 +76,10 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {stats.map((stat, index) => (
           <StatsCard key={index} {...stat} />
         ))}
-      </div>
-
-      {/* Charts and Data */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Revenue Chart */}
-        <Card className="card-premium">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2 text-primary" />
-              Revenue Last 30 Days
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isDashboardLoading ? (
-              <Skeleton className="h-64 w-full" />
-            ) : dashboardData?.revenueData && dashboardData.revenueData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={dashboardData?.revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    className="text-xs"
-                  />
-                  <YAxis 
-                    tickFormatter={(value) => formatCurrency(value)}
-                    className="text-xs"
-                  />
-                  <Tooltip 
-                    formatter={(value) => [formatCurrency(Number(value)), 'Revenue']}
-                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-64 flex items-center justify-center">
-                <div className="text-center">
-                  <TrendingUp className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">No revenue data yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Start processing appointments to see your revenue trends
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
       </div>
 
       {/* Main Content Grid */}
@@ -233,7 +159,7 @@ export default function Dashboard() {
           </Button>
           <Button variant="outline" className="w-full justify-start hover:bg-accent/50" asChild>
             <Link to="/billing">
-              <DollarSign className="w-4 h-4 mr-2" />
+              <IndianRupee className="w-4 h-4 mr-2" />
               Process Payment
             </Link>
           </Button>
