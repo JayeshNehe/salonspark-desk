@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUserSalonId } from './useUserRoles';
+import { customerSchema } from '@/lib/validations';
 
 interface Customer {
   id: string;
@@ -35,12 +37,18 @@ export function useCustomers(searchQuery?: string) {
 export function useCreateCustomer() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: salonId } = useUserSalonId();
 
   return useMutation({
     mutationFn: async (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
+      // Validate input
+      customerSchema.parse(customer);
+      
+      if (!salonId) throw new Error('Salon not found');
+      
       const { data, error } = await supabase
         .from('customers')
-        .insert([customer])
+        .insert([{ ...customer, salon_id: salonId }])
         .select()
         .single();
       

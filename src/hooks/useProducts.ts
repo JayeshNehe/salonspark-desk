@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/currency';
+import { useUserSalonId } from './useUserRoles';
+import { productSchema } from '@/lib/validations';
 
 interface Product {
   id: string;
@@ -53,12 +55,18 @@ export function useLowStockProducts() {
 export function useCreateProduct() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: salonId } = useUserSalonId();
 
   return useMutation({
     mutationFn: async (product: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
+      // Validate input
+      productSchema.parse(product);
+      
+      if (!salonId) throw new Error('Salon not found');
+      
       const { data, error } = await supabase
         .from('products')
-        .insert([product])
+        .insert([{ ...product, salon_id: salonId }])
         .select()
         .single();
       

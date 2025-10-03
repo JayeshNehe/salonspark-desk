@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUserSalonId } from './useUserRoles';
 
 interface Sale {
   id: string;
@@ -68,6 +69,7 @@ export function useSales() {
 export function useCreateSale() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: salonId } = useUserSalonId();
 
   return useMutation({
     mutationFn: async (saleData: {
@@ -85,11 +87,14 @@ export function useCreateSale() {
         total_price: number;
       }>;
     }) => {
+      if (!salonId) throw new Error('Salon not found');
+      
       // Create the sale record
       const { data: sale, error: saleError } = await supabase
         .from('sales')
         .insert([{
           customer_id: saleData.customer_id,
+          salon_id: salonId,
           subtotal: saleData.subtotal,
           tax_amount: saleData.tax_amount,
           discount_amount: saleData.discount_amount,

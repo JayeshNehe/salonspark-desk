@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUserSalonId } from './useUserRoles';
+import { appointmentSchema } from '@/lib/validations';
 
 interface Appointment {
   id: string;
@@ -63,12 +65,18 @@ export function useAppointments() {
 export function useCreateAppointment() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: salonId } = useUserSalonId();
 
   return useMutation({
     mutationFn: async (appointment: Omit<Appointment, 'id' | 'created_at' | 'updated_at' | 'customers' | 'services' | 'staff'>) => {
+      // Validate input
+      appointmentSchema.parse(appointment);
+      
+      if (!salonId) throw new Error('Salon not found');
+      
       const { data, error } = await supabase
         .from('appointments')
-        .insert([appointment])
+        .insert([{ ...appointment, salon_id: salonId }])
         .select()
         .single();
       
@@ -143,9 +151,12 @@ export function useUpdateAppointment() {
 export function useCheckInAppointment() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: salonId } = useUserSalonId();
 
   return useMutation({
     mutationFn: async (appointmentId: string) => {
+      if (!salonId) throw new Error('Salon not found');
+      
       // First get the appointment details
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
@@ -182,6 +193,7 @@ export function useCheckInAppointment() {
           customer_id: appointment.customer_id,
           appointment_id: appointmentId,
           staff_id: appointment.staff_id,
+          salon_id: salonId,
           subtotal: appointment.total_amount,
           tax_amount: 0,
           discount_amount: 0,

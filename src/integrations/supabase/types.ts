@@ -25,6 +25,7 @@ export type Database = {
           duration_minutes: number
           id: string
           notes: string | null
+          salon_id: string | null
           service_id: string
           staff_id: string | null
           status: Database["public"]["Enums"]["appointment_status"] | null
@@ -41,6 +42,7 @@ export type Database = {
           duration_minutes: number
           id?: string
           notes?: string | null
+          salon_id?: string | null
           service_id: string
           staff_id?: string | null
           status?: Database["public"]["Enums"]["appointment_status"] | null
@@ -57,6 +59,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           notes?: string | null
+          salon_id?: string | null
           service_id?: string
           staff_id?: string | null
           status?: Database["public"]["Enums"]["appointment_status"] | null
@@ -69,6 +72,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salon_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -98,6 +108,7 @@ export type Database = {
           last_name: string
           notes: string | null
           phone: string
+          salon_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -110,6 +121,7 @@ export type Database = {
           last_name: string
           notes?: string | null
           phone: string
+          salon_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -122,9 +134,18 @@ export type Database = {
           last_name?: string
           notes?: string | null
           phone?: string
+          salon_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salon_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -137,6 +158,7 @@ export type Database = {
           id: string
           min_stock_level: number | null
           name: string
+          salon_id: string | null
           selling_price: number
           stock_quantity: number
           supplier: string | null
@@ -153,6 +175,7 @@ export type Database = {
           id?: string
           min_stock_level?: number | null
           name: string
+          salon_id?: string | null
           selling_price: number
           stock_quantity?: number
           supplier?: string | null
@@ -169,13 +192,22 @@ export type Database = {
           id?: string
           min_stock_level?: number | null
           name?: string
+          salon_id?: string | null
           selling_price?: number
           stock_quantity?: number
           supplier?: string | null
           supplier_mobile?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salon_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -185,7 +217,6 @@ export type Database = {
           id: string
           last_name: string | null
           phone: string | null
-          role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string | null
           user_id: string
         }
@@ -196,7 +227,6 @@ export type Database = {
           id?: string
           last_name?: string | null
           phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string | null
           user_id: string
         }
@@ -207,7 +237,6 @@ export type Database = {
           id?: string
           last_name?: string | null
           phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string | null
           user_id?: string
         }
@@ -278,6 +307,7 @@ export type Database = {
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status: Database["public"]["Enums"]["payment_status"] | null
           sale_date: string | null
+          salon_id: string | null
           staff_id: string | null
           subtotal: number
           tax_amount: number | null
@@ -293,6 +323,7 @@ export type Database = {
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           sale_date?: string | null
+          salon_id?: string | null
           staff_id?: string | null
           subtotal: number
           tax_amount?: number | null
@@ -308,6 +339,7 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           sale_date?: string | null
+          salon_id?: string | null
           staff_id?: string | null
           subtotal?: number
           tax_amount?: number | null
@@ -327,6 +359,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salon_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -404,6 +443,47 @@ export type Database = {
         }
         Relationships: []
       }
+      salon_settings: {
+        Row: {
+          business_settings: Json | null
+          created_at: string | null
+          id: string
+          notification_settings: Json | null
+          operational_settings: Json | null
+          salon_id: string
+          security_settings: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          business_settings?: Json | null
+          created_at?: string | null
+          id?: string
+          notification_settings?: Json | null
+          operational_settings?: Json | null
+          salon_id: string
+          security_settings?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          business_settings?: Json | null
+          created_at?: string | null
+          id?: string
+          notification_settings?: Json | null
+          operational_settings?: Json | null
+          salon_id?: string
+          security_settings?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_settings_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: true
+            referencedRelation: "salon_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_categories: {
         Row: {
           created_at: string | null
@@ -434,6 +514,7 @@ export type Database = {
           id: string
           name: string
           price: number
+          salon_id: string | null
           status: Database["public"]["Enums"]["service_status"] | null
           updated_at: string | null
         }
@@ -445,6 +526,7 @@ export type Database = {
           id?: string
           name: string
           price: number
+          salon_id?: string | null
           status?: Database["public"]["Enums"]["service_status"] | null
           updated_at?: string | null
         }
@@ -456,6 +538,7 @@ export type Database = {
           id?: string
           name?: string
           price?: number
+          salon_id?: string | null
           status?: Database["public"]["Enums"]["service_status"] | null
           updated_at?: string | null
         }
@@ -465,6 +548,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salon_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -481,6 +571,7 @@ export type Database = {
           phone: string
           role: string
           salary: number | null
+          salon_id: string | null
           specialization: string[] | null
           status: Database["public"]["Enums"]["staff_status"] | null
           updated_at: string | null
@@ -496,6 +587,7 @@ export type Database = {
           phone: string
           role: string
           salary?: number | null
+          salon_id?: string | null
           specialization?: string[] | null
           status?: Database["public"]["Enums"]["staff_status"] | null
           updated_at?: string | null
@@ -511,11 +603,20 @@ export type Database = {
           phone?: string
           role?: string
           salary?: number | null
+          salon_id?: string | null
           specialization?: string[] | null
           status?: Database["public"]["Enums"]["staff_status"] | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "staff_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salon_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_movements: {
         Row: {
@@ -558,14 +659,58 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          salon_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          salon_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          salon_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salon_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_salon_id: {
+        Args: { _user_id: string }
+        Returns: string
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _salon_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "manager" | "staff" | "user"
       appointment_status:
         | "scheduled"
         | "confirmed"
@@ -706,6 +851,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "manager", "staff", "user"],
       appointment_status: [
         "scheduled",
         "confirmed",
