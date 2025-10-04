@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/appointments/DatePicker";
 import { useCreateCustomer } from "@/hooks/useCustomers";
 
 interface NewCustomerFormProps {
@@ -89,11 +90,9 @@ export function NewCustomerForm({ onCustomerCreated, onCancel }: NewCustomerForm
       
       <div className="space-y-2">
         <Label htmlFor="date_of_birth">Date of Birth</Label>
-        <Input
-          id="date_of_birth"
-          type="date"
+        <DatePicker
           value={formData.date_of_birth}
-          onChange={(e) => handleChange('date_of_birth', e.target.value)}
+          onValueChange={(value) => handleChange('date_of_birth', value)}
         />
       </div>
       
