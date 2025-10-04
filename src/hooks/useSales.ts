@@ -69,7 +69,7 @@ export function useSales() {
 export function useCreateSale() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data: salonId } = useUserSalonId();
+  const { data: salonId, isLoading: isSalonLoading } = useUserSalonId();
 
   return useMutation({
     mutationFn: async (saleData: {
@@ -87,7 +87,14 @@ export function useCreateSale() {
         total_price: number;
       }>;
     }) => {
-      if (!salonId) throw new Error('Salon not found');
+      // Wait for salon ID to be loaded
+      if (isSalonLoading) {
+        throw new Error('Loading salon information...');
+      }
+      
+      if (!salonId) {
+        throw new Error('Salon not found. Please ensure you have a salon profile.');
+      }
       
       // Create the sale record
       const { data: sale, error: saleError } = await supabase
