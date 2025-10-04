@@ -25,6 +25,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { formatCurrency } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { CustomerSearchCombobox } from '@/components/appointments/CustomerSearchCombobox';
+import { useUserSalonId } from '@/hooks/useUserRoles';
 
 interface CartItem {
   id: string;
@@ -39,6 +40,7 @@ export default function Billing() {
   const { data: services } = useServices();  
   const { data: products } = useProducts();
   const { toast } = useToast();
+  const { data: salonId } = useUserSalonId();
 
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -94,6 +96,15 @@ export default function Billing() {
       return;
     }
 
+    if (!salonId) {
+      toast({
+        title: "Error",
+        description: "Salon information not found. Please ensure you have a salon profile.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
@@ -102,6 +113,7 @@ export default function Billing() {
         .from('sales')
         .insert({
           customer_id: selectedCustomer || null,
+          salon_id: salonId,
           subtotal: subtotal,
           discount_amount: discountAmount,
           tax_amount: 0,
