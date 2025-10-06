@@ -157,70 +157,41 @@ export function useCheckInAppointment() {
     mutationFn: async (appointmentId: string) => {
       if (!salonId) throw new Error('Salon not found');
       
-      // First get the appointment details
+      // Get appointment details
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
-        .select(`
-          *,
-          customers (
-            id,
-            first_name,
-            last_name
-          ),
-          services (
-            id,
-            name,
-            price
-          )
-        `)
+        .select('*')
         .eq('id', appointmentId)
         .single();
 
       if (appointmentError) throw appointmentError;
 
-      // Update appointment status to in_progress
+      // Update appointment status to in_progress and schedule auto-complete
+      const completionTime = new Date();
+      completionTime.setMinutes(completionTime.getMinutes() + appointment.duration_minutes);
+
       const { error: updateError } = await supabase
         .from('appointments')
-        .update({ status: 'in_progress' })
+        .update({ 
+          status: 'in_progress'
+        })
         .eq('id', appointmentId);
 
       if (updateError) throw updateError;
 
-      // Create a sale record for billing
-      const { data: sale, error: saleError } = await supabase
-        .from('sales')
-        .insert([{
-          customer_id: appointment.customer_id,
-          appointment_id: appointmentId,
-          staff_id: appointment.staff_id,
-          salon_id: salonId,
-          subtotal: appointment.total_amount,
-          tax_amount: 0,
-          discount_amount: 0,
-          total_amount: appointment.total_amount,
-          payment_method: 'cash',
-          payment_status: 'pending',
-          sale_date: new Date().toISOString()
-        }])
-        .select()
-        .single();
+      // Schedule automatic status update to completed
+      setTimeout(async () => {
+        await supabase
+          .from('appointments')
+          .update({ status: 'completed' })
+          .eq('id', appointmentId)
+          .eq('status', 'in_progress'); // Only update if still in progress
+        
+        queryClient.invalidateQueries({ queryKey: ['appointments'] });
+        queryClient.invalidateQueries({ queryKey: ['pending-billings'] });
+      }, appointment.duration_minutes * 60 * 1000);
 
-      if (saleError) throw saleError;
-
-      // Create sale item for the service
-      const { error: saleItemError } = await supabase
-        .from('sale_items')
-        .insert([{
-          sale_id: sale.id,
-          service_id: appointment.service_id,
-          quantity: 1,
-          unit_price: appointment.services.price,
-          total_price: appointment.services.price
-        }]);
-
-      if (saleItemError) throw saleItemError;
-
-      return { appointment, sale };
+      return { appointment };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
