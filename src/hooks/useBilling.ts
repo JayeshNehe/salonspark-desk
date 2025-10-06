@@ -169,14 +169,14 @@ export function useHoldTransaction() {
       const { data: sale, error: saleError } = await supabase
         .from('sales')
         .insert({
-          customer_id: customerId,
+          customer_id: customerId || undefined,
           salon_id: salonId,
           subtotal,
           discount_amount: discountAmount,
           tax_amount: 0,
           total_amount: subtotal - discountAmount,
-          payment_method: paymentMethod,
-          payment_status: 'on_hold'
+          payment_method: paymentMethod as any,
+          payment_status: 'on_hold' as any
         })
         .select()
         .single();
@@ -250,8 +250,8 @@ export function useCompleteHeldTransaction() {
       const { error: updateError } = await supabase
         .from('sales')
         .update({
-          payment_status: 'paid',
-          payment_method: paymentMethod,
+          payment_status: 'paid' as any,
+          payment_method: paymentMethod as any,
           discount_amount: discountAmount,
           total_amount: total
         })

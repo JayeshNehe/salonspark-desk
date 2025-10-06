@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,9 @@ import {
   IndianRupee,
   Calculator,
   Clock,
-  User
+  User,
+  Pause,
+  Play
 } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useServices } from '@/hooks/useServices';
@@ -26,6 +28,7 @@ import { formatCurrency } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { CustomerSearchCombobox } from '@/components/appointments/CustomerSearchCombobox';
 import { useUserSalonId } from '@/hooks/useUserRoles';
+import { usePendingBillings, useHeldTransactions, useHoldTransaction, useCompleteHeldTransaction } from '@/hooks/useBilling';
 
 interface CartItem {
   id: string;
@@ -39,10 +42,13 @@ export default function Billing() {
   const { data: customers } = useCustomers();
   const { data: services } = useServices();  
   const { data: products } = useProducts();
+  const { data: pendingBillings } = usePendingBillings();
+  const { data: heldTransactions } = useHeldTransactions();
   const { toast } = useToast();
   const { data: salonId } = useUserSalonId();
 
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'upi'>('cash');
   const [discountAmount, setDiscountAmount] = useState(0);
@@ -50,6 +56,27 @@ export default function Billing() {
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
   const [serviceSearchQuery, setServiceSearchQuery] = useState('');
   const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('billing');
+  
+  const holdTransaction = useHoldTransaction();
+  const completeHeldTransaction = useCompleteHeldTransaction();
+
+  // Load appointment service when customer is selected from pending billings
+  useEffect(() => {
+    if (selectedCustomer) {
+      const pendingBilling = pendingBillings?.find(pb => pb.customer_id === selectedCustomer);
+      if (pendingBilling && !cart.some(item => item.id === pendingBilling.service_id)) {
+        setSelectedAppointmentId(pendingBilling.appointment_id);
+        setCart([{
+          id: pendingBilling.service_id,
+          name: pendingBilling.service_name,
+          type: 'service',
+          price: pendingBilling.service_price,
+          quantity: 1
+        }]);
+      }
+    }
+  }, [selectedCustomer, pendingBillings]);
 
   const addToCart = (item: { id: string; name: string; type: 'service' | 'product'; price: number }) => {
     const existingItem = cart.find(cartItem => cartItem.id === item.id && cartItem.type === item.type);
@@ -114,6 +141,7 @@ export default function Billing() {
         .insert({
           customer_id: selectedCustomer || null,
           salon_id: salonId,
+          appointment_id: selectedAppointmentId || null,
           subtotal: subtotal,
           discount_amount: discountAmount,
           tax_amount: 0,
@@ -142,6 +170,17 @@ export default function Billing() {
 
       if (itemsError) throw itemsError;
 
+      // Mark appointment billing as generated if from appointment
+      if (selectedAppointmentId) {
+        await supabase
+          .from('appointments')
+          .update({ 
+            billing_generated: true,
+            billing_id: saleData.id
+          })
+          .eq('id', selectedAppointmentId);
+      }
+
       // Update product stock for products sold
       for (const item of cart.filter(i => i.type === 'product')) {
         const { data: currentProduct } = await supabase
@@ -168,6 +207,7 @@ export default function Billing() {
       // Reset the cart and form
       setCart([]);
       setSelectedCustomer('');
+      setSelectedAppointmentId('');
       setDiscountAmount(0);
       setPaymentMethod('cash');
     } catch (error: any) {
@@ -177,6 +217,55 @@ export default function Billing() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleHoldTransaction = async () => {
+    if (cart.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please add items to the cart before holding transaction.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await holdTransaction.mutateAsync({
+      customerId: selectedCustomer || null,
+      cart,
+      subtotal,
+      discountAmount,
+      paymentMethod
+    });
+
+    // Reset form
+    setCart([]);
+    setSelectedCustomer('');
+    setSelectedAppointmentId('');
+    setDiscountAmount(0);
+    setActiveTab('held');
+  };
+
+  const handleResumeTransaction = (transaction: any) => {
+    setSelectedCustomer(transaction.customer_id);
+    setCart(transaction.items);
+    setDiscountAmount(transaction.discount_amount);
+    setPaymentMethod(transaction.payment_method);
+    setActiveTab('billing');
+  };
+
+  const handleCompleteHeldTransaction = async (saleId: string) => {
+    await completeHeldTransaction.mutateAsync({
+      saleId,
+      paymentMethod,
+      discountAmount,
+      appointmentId: selectedAppointmentId || undefined
+    });
+
+    // Reset form
+    setCart([]);
+    setSelectedCustomer('');
+    setSelectedAppointmentId('');
+    setDiscountAmount(0);
   };
 
   const filteredServices = services?.filter(service => 
@@ -214,23 +303,56 @@ export default function Billing() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Cart and Customer Selection */}
-        <div className="lg:col-span-2 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Customer Selection
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CustomerSearchCombobox
-                value={selectedCustomer}
-                onValueChange={setSelectedCustomer}
-              />
-            </CardContent>
-          </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="billing">New Billing</TabsTrigger>
+          <TabsTrigger value="held">
+            Held Transactions
+            {heldTransactions && heldTransactions.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{heldTransactions.length}</Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="billing" className="space-y-4">
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Cart and Customer Selection */}
+            <div className="lg:col-span-2 space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Customer Selection
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {pendingBillings && pendingBillings.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Customers with Completed Appointments</Label>
+                      <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select customer from completed appointments" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {pendingBillings.map((billing) => (
+                            <SelectItem key={billing.appointment_id} value={billing.customer_id}>
+                              {billing.customer_name} - {billing.service_name} ({formatCurrency(billing.service_price)})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label>Or Select Any Customer</Label>
+                    <CustomerSearchCombobox
+                      value={selectedCustomer}
+                      onValueChange={setSelectedCustomer}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
           <Card>
             <CardHeader>
@@ -494,14 +616,83 @@ export default function Billing() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full gap-2">
-                <Clock className="h-4 w-4" />
+              <Button variant="outline" className="w-full gap-2" onClick={handleHoldTransaction} disabled={cart.length === 0}>
+                <Pause className="h-4 w-4" />
                 Hold Transaction
               </Button>
             </CardContent>
           </Card>
         </div>
       </div>
+    </TabsContent>
+
+    <TabsContent value="held" className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Held Transactions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {heldTransactions && heldTransactions.length > 0 ? (
+            <div className="space-y-4">
+              {heldTransactions.map((transaction) => (
+                <Card key={transaction.id} className="hover-lift">
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-semibold">{transaction.customer_name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(transaction.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <Badge>{formatCurrency(transaction.subtotal - transaction.discount_amount)}</Badge>
+                    </div>
+                    
+                    <div className="space-y-2 mb-4">
+                      {transaction.items.map((item, idx) => (
+                        <div key={idx} className="flex justify-between text-sm">
+                          <span>{item.name} x{item.quantity}</span>
+                          <span>{formatCurrency(item.price * item.quantity)}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        className="flex-1 gap-2"
+                        onClick={() => handleResumeTransaction(transaction)}
+                      >
+                        <Play className="h-4 w-4" />
+                        Resume
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="flex-1 gap-2"
+                        onClick={() => handleCompleteHeldTransaction(transaction.id)}
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        Complete Payment
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No held transactions</p>
+              <p className="text-sm">Held transactions will appear here</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </TabsContent>
+  </Tabs>
     </div>
   );
 }

@@ -13,7 +13,7 @@ interface Sale {
   discount_amount: number;
   total_amount: number;
   payment_method: 'cash' | 'card' | 'upi' | 'wallet';
-  payment_status: 'pending' | 'paid' | 'refunded' | 'failed';
+  payment_status: 'pending' | 'paid' | 'refunded' | 'failed' | 'on_hold';
   sale_date: string;
   created_at: string;
   updated_at: string;

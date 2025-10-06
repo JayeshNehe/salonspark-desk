@@ -720,7 +720,7 @@ export type Database = {
         | "no_show"
         | "waiting"
       payment_method: "cash" | "card" | "upi" | "wallet"
-      payment_status: "pending" | "paid" | "refunded" | "failed"
+      payment_status: "pending" | "paid" | "refunded" | "failed" | "on_hold"
       service_status: "active" | "inactive"
       staff_status: "active" | "inactive" | "on_leave"
       user_role: "admin" | "manager" | "staff" | "user"
@@ -862,7 +862,7 @@ export const Constants = {
         "waiting",
       ],
       payment_method: ["cash", "card", "upi", "wallet"],
-      payment_status: ["pending", "paid", "refunded", "failed"],
+      payment_status: ["pending", "paid", "refunded", "failed", "on_hold"],
       service_status: ["active", "inactive"],
       staff_status: ["active", "inactive", "on_leave"],
       user_role: ["admin", "manager", "staff", "user"],
