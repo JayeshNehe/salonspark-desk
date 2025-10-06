@@ -9,9 +9,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 interface DatePickerProps {
   value: string;
   onValueChange: (value: string) => void;
+  disableFuture?: boolean;
+  disablePast?: boolean;
 }
 
-export function DatePicker({ value, onValueChange }: DatePickerProps) {
+export function DatePicker({ value, onValueChange, disableFuture = false, disablePast = true }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   
   const selectedDate = value ? new Date(value) : undefined;
@@ -42,7 +44,12 @@ export function DatePicker({ value, onValueChange }: DatePickerProps) {
           mode="single"
           selected={selectedDate}
           onSelect={handleDateSelect}
-          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+          disabled={(date) => {
+            const today = new Date(new Date().setHours(0, 0, 0, 0));
+            if (disablePast && date < today) return true;
+            if (disableFuture && date > today) return true;
+            return false;
+          }}
           initialFocus
           className={cn("p-3 pointer-events-auto")}
         />

@@ -93,6 +93,8 @@ export function NewCustomerForm({ onCustomerCreated, onCancel }: NewCustomerForm
         <DatePicker
           value={formData.date_of_birth}
           onValueChange={(value) => handleChange('date_of_birth', value)}
+          disablePast={false}
+          disableFuture={true}
         />
       </div>
       
