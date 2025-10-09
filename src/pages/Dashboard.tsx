@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StaggerContainer, staggerItemVariants } from "@/components/animations/StaggerContainer";
+import { motion } from "framer-motion";
 import { 
   Calendar, 
   IndianRupee, 
@@ -76,11 +78,13 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {stats.map((stat, index) => (
-          <StatsCard key={index} {...stat} />
+          <motion.div key={index} variants={staggerItemVariants}>
+            <StatsCard {...stat} />
+          </motion.div>
         ))}
-      </div>
+      </StaggerContainer>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
