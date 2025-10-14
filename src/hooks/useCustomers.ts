@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useUserSalonId, useHasRole } from './useUserRoles';
+import { useUserSalonId } from './useUserRoles';
 import { customerSchema } from '@/lib/validations';
 
 interface Customer {
@@ -13,35 +13,21 @@ interface Customer {
   address?: string;
   date_of_birth?: string;
   notes?: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export function useCustomers(searchQuery?: string) {
-  const isAdminOrManager = useHasRole('admin') || useHasRole('manager');
-  
   return useQuery({
-    queryKey: ['customers', searchQuery, isAdminOrManager],
+    queryKey: ['customers', searchQuery],
     queryFn: async (): Promise<Customer[]> => {
-      // Admin and managers get full customer data via direct query
-      if (isAdminOrManager) {
-        let query = supabase.from('customers').select('*').order('created_at', { ascending: false });
-        
-        if (searchQuery) {
-          query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
-        }
-        
-        const { data, error } = await query;
-        if (error) throw error;
-        return data || [];
+      let query = supabase.from('customers').select('*').order('created_at', { ascending: false });
+      
+      if (searchQuery) {
+        query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
       }
       
-      // Staff members get limited customer data (no PII like addresses, emails, birthdates)
-      // via secure function to prevent unauthorized access
-      const { data, error } = await supabase.rpc('search_customers_limited', {
-        search_term: searchQuery || null
-      });
-      
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
