@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Mail, Lock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { authSchema } from '@/lib/validations';
@@ -12,9 +12,55 @@ import { authSchema } from '@/lib/validations';
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, signIn } = useAuth();
+  const { user, signIn, signUp } = useAuth();
   const { toast } = useToast();
+
+  // Demo login function
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    // Use demo credentials
+    const demoEmail = 'demo@salon.com';
+    const demoPassword = 'demo123';
+    
+    const { error } = await signIn(demoEmail, demoPassword);
+    
+    if (error) {
+      // If demo user doesn't exist, create it
+      const { error: signUpError } = await signUp(demoEmail, demoPassword, {
+        first_name: 'Demo',
+        last_name: 'User',
+      });
+      
+      if (!signUpError) {
+        // Try signing in again after signup
+        setTimeout(async () => {
+          const { error: secondSignInError } = await signIn(demoEmail, demoPassword);
+          if (!secondSignInError) {
+            toast({
+              title: "Success",
+              description: "Demo account created and logged in!",
+            });
+          }
+        }, 1000);
+      } else {
+        toast({
+          title: "Error",
+          description: signUpError.message || "Failed to create demo account",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "Success",
+        description: "Logged in with demo account!",
+      });
+    }
+    
+    setLoading(false);
+  };
 
   // Redirect if already authenticated
   if (user) {
@@ -54,85 +100,176 @@ export default function Auth() {
     setLoading(false);
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-primary rounded-full opacity-10 blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-secondary rounded-full opacity-10 blur-3xl" />
-      
-      <div className="w-full max-w-md relative z-10">
-        {/* Back button */}
-        <Link to="/" className="inline-flex items-center text-white/80 hover:text-white mb-6 transition-colors">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to home
-        </Link>
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-        <Card className="glass border-white/20 shadow-strong">
-          <CardHeader className="text-center space-y-2">
-            <div className="w-16 h-16 mx-auto bg-gradient-primary rounded-full flex items-center justify-center mb-4">
-              <Lock className="w-8 h-8 text-white" />
+    try {
+      // Validate input
+      authSchema.parse({ email, password });
+      
+      const { error } = await signUp(email, password, {
+        first_name: firstName,
+        last_name: lastName,
+      });
+      
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to sign up",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Account created successfully! Please check your email to verify your account.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Validation Error",
+        description: error.errors?.[0]?.message || "Invalid input. Password must be at least 8 characters with uppercase, lowercase, number, and special character.",
+        variant: "destructive",
+      });
+    }
+    
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+      <Card className="w-full max-w-md card-premium">
+        <CardHeader>
+          <CardTitle className="text-2xl text-center bg-gradient-primary bg-clip-text text-transparent">
+            Salon Management
+          </CardTitle>
+          <CardDescription className="text-center">
+            Sign in to access your salon dashboard
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Demo Login Button */}
+          <div className="space-y-4 mb-6">
+            <Button 
+              onClick={handleDemoLogin}
+              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold"
+              disabled={loading}
+              size="lg"
+            >
+              {loading ? "Logging in..." : "🚀 Quick Demo Login"}
+            </Button>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/50" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
+              </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-white">Sign In to Your Salon</CardTitle>
-            <CardDescription className="text-white/70">
-              Access your salon management dashboard
-            </CardDescription>
-          </CardHeader>
+          </div>
           
-          <CardContent className="space-y-6">
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-white/90">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+          <Tabs defaultValue="signin" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signin">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="signin">
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signin-email">Email</Label>
                   <Input
-                    id="email"
+                    id="signin-email"
                     type="email"
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50 pl-10"
                   />
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-white/90">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                <div className="space-y-2">
+                  <Label htmlFor="signin-password">Password</Label>
                   <Input
-                    id="password"
+                    id="signin-password"
                     type="password"
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50 pl-10"
                   />
                 </div>
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-primary hover:opacity-90 text-white border-0 py-6 text-lg font-semibold transition-all duration-300 hover:scale-105 shadow-primary"
-                disabled={loading}
-              >
-                {loading ? "Signing In..." : "Sign In"}
-              </Button>
-            </form>
-
-            <div className="text-center">
-              <p className="text-white/70">
-                Don't have an account?{' '}
-                <Link to="/salon-registration" className="text-yellow-300 hover:text-yellow-200 font-medium">
-                  Register your salon
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90"
+                  disabled={loading}
+                >
+                  {loading ? "Signing In..." : "Sign In"}
+                </Button>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="signup">
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="first-name">First Name</Label>
+                    <Input
+                      id="first-name"
+                      placeholder="First name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="last-name">Last Name</Label>
+                    <Input
+                      id="last-name"
+                      placeholder="Last name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={8}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Password must be at least 8 characters with uppercase, lowercase, number, and special character
+                  </p>
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90"
+                  disabled={loading}
+                >
+                  {loading ? "Creating Account..." : "Sign Up"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
