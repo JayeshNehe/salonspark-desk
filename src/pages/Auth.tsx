@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { authSchema } from '@/lib/validations';
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -71,29 +70,18 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      // Validate input
-      authSchema.parse({ email, password });
-      
-      const { error } = await signIn(email, password);
-      
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to sign in",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Signed in successfully!",
-        });
-      }
-    } catch (error: any) {
+    const { error } = await signIn(email, password);
+    
+    if (error) {
       toast({
-        title: "Validation Error",
-        description: error.errors?.[0]?.message || "Invalid email or password format",
+        title: "Error",
+        description: error.message || "Failed to sign in",
         variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Signed in successfully!",
       });
     }
     
@@ -104,32 +92,21 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      // Validate input
-      authSchema.parse({ email, password });
-      
-      const { error } = await signUp(email, password, {
-        first_name: firstName,
-        last_name: lastName,
-      });
-      
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to sign up",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Account created successfully! Please check your email to verify your account.",
-        });
-      }
-    } catch (error: any) {
+    const { error } = await signUp(email, password, {
+      first_name: firstName,
+      last_name: lastName,
+    });
+    
+    if (error) {
       toast({
-        title: "Validation Error",
-        description: error.errors?.[0]?.message || "Invalid input. Password must be at least 8 characters with uppercase, lowercase, number, and special character.",
+        title: "Error",
+        description: error.message || "Failed to sign up",
         variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Account created successfully! Please check your email to verify your account.",
       });
     }
     
@@ -248,15 +225,12 @@ export default function Auth() {
                   <Input
                     id="signup-password"
                     type="password"
-                    placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special"
+                    placeholder="Create a password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={8}
+                    minLength={6}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Password must be at least 8 characters with uppercase, lowercase, number, and special character
-                  </p>
                 </div>
                 <Button 
                   type="submit" 
