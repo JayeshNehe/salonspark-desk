@@ -754,16 +754,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      search_customers_limited: {
-        Args: { search_term?: string }
-        Returns: {
-          first_name: string
-          id: string
-          last_name: string
-          phone: string
-          salon_id: string
-        }[]
-      }
     }
     Enums: {
       app_role: "admin" | "manager" | "staff" | "user"
