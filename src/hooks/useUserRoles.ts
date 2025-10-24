@@ -61,9 +61,15 @@ export function useUserSalonId() {
 export function useAssignRole() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const isAdmin = useHasRole('admin');
 
   return useMutation({
     mutationFn: async ({ userId, salonId, role }: { userId: string; salonId: string; role: AppRole }) => {
+      // Client-side authorization check
+      if (!isAdmin) {
+        throw new Error('Unauthorized: Only admins can assign roles');
+      }
+      
       const { data, error } = await supabase
         .from('user_roles')
         .insert([{ user_id: userId, salon_id: salonId, role }])
@@ -94,9 +100,15 @@ export function useAssignRole() {
 export function useRemoveRole() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const isAdmin = useHasRole('admin');
 
   return useMutation({
     mutationFn: async (roleId: string) => {
+      // Client-side authorization check
+      if (!isAdmin) {
+        throw new Error('Unauthorized: Only admins can remove roles');
+      }
+      
       const { error } = await supabase
         .from('user_roles')
         .delete()
