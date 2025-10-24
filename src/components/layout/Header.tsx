@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/providers/AuthProvider";
 import { User, LogOut } from "lucide-react";
+import { motion } from "framer-motion";
 
 export function Header() {
   const { user, signOut } = useAuth();
@@ -22,17 +23,27 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 border-b border-border/50 bg-background/95 backdrop-blur-md">
+    <header className="h-16 border-b border-border/50 bg-background/95 backdrop-blur-md shadow-soft">
       <div className="flex items-center justify-between px-6 h-full">
         {/* Logo or Brand */}
-        <div className="flex items-center space-x-4 flex-1">
+        <motion.div 
+          className="flex items-center space-x-4 flex-1"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           <h2 className="text-lg font-semibold bg-gradient-primary bg-clip-text text-transparent">
             Salon Management
           </h2>
-        </div>
+        </motion.div>
 
         {/* Right side */}
-        <div className="flex items-center space-x-4">
+        <motion.div 
+          className="flex items-center space-x-4"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           {/* Theme Toggle */}
           <ThemeToggle />
           
@@ -40,13 +51,19 @@ export function Header() {
           {/* User menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10 border-2 border-primary/20">
-                  <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                    {user?.email?.charAt(0).toUpperCase() || <User className="w-4 h-4" />}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-10 w-10 border-2 border-primary/20">
+                    <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                      {user?.email?.charAt(0).toUpperCase() || <User className="w-4 h-4" />}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </motion.div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
@@ -61,7 +78,7 @@ export function Header() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="cursor-pointer text-destructive focus:text-destructive"
+                className="cursor-pointer text-destructive focus:text-destructive transition-colors"
                 onClick={handleSignOut}
               >
                 <LogOut className="mr-2 h-4 w-4" />
@@ -69,7 +86,7 @@ export function Header() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </motion.div>
       </div>
     </header>
   );

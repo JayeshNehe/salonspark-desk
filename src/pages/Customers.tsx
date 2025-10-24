@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Search, Phone, Mail, Users } from "lucide-react";
 import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
+import { useHasRole } from "@/hooks/useUserRoles";
 
 export default function Customers() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,6 +25,7 @@ export default function Customers() {
 
   const { data: customers, isLoading } = useCustomers(searchQuery);
   const createCustomer = useCreateCustomer();
+  const isAdminOrManager = useHasRole('admin') || useHasRole('manager');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,13 +53,14 @@ export default function Customers() {
             Manage your salon's customer database
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-primary">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Customer
-            </Button>
-          </DialogTrigger>
+        {isAdminOrManager && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-primary">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Customer
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Add New Customer</DialogTitle>
@@ -136,6 +139,7 @@ export default function Customers() {
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {/* Custom Search Bar */}
@@ -194,7 +198,7 @@ export default function Customers() {
                           <Phone className="w-3 h-3 text-muted-foreground" />
                           <span className="text-sm">{customer.phone}</span>
                         </div>
-                        {customer.email && (
+                        {customer.email && isAdminOrManager && (
                           <div className="flex items-center gap-2">
                             <Mail className="w-3 h-3 text-muted-foreground" />
                             <span className="text-sm">{customer.email}</span>
@@ -203,7 +207,9 @@ export default function Customers() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">{customer.address || 'N/A'}</span>
+                      <span className="text-sm">
+                        {isAdminOrManager ? (customer.address || 'N/A') : '••••••'}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <span className="text-sm">

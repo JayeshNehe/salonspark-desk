@@ -746,6 +746,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      get_user_staff_id: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -753,6 +757,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      search_customers_limited: {
+        Args: { search_term?: string }
+        Returns: {
+          first_name: string
+          id: string
+          last_name: string
+          phone: string
+          salon_id: string
+        }[]
       }
     }
     Enums: {
