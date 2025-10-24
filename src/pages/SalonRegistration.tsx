@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft, Building2, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { toast } from 'sonner';
+import { authSchema, salonRegistrationSchema } from '@/lib/validations';
 
 const SalonRegistration = () => {
   const navigate = useNavigate();
@@ -37,14 +38,25 @@ const SalonRegistration = () => {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-
     setLoading(true);
     
     try {
+      // Validate password with authSchema
+      authSchema.parse({ email: formData.email, password: formData.password });
+      
+      // Validate salon registration fields
+      salonRegistrationSchema.parse({
+        salon_name: formData.salonName,
+        owner_name: formData.ownerName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: 'N/A', // These can be added to form later if needed
+        state: 'N/A',
+        zip_code: 'N/A',
+        country: 'India'
+      });
+      
       const { error } = await signUp(formData.email, formData.password);
       
       if (error) {
@@ -54,7 +66,12 @@ const SalonRegistration = () => {
         navigate('/dashboard');
       }
     } catch (error: any) {
-      toast.error('Registration failed. Please try again.');
+      if (error.errors) {
+        // Zod validation errors
+        toast.error(error.errors[0]?.message || 'Validation failed');
+      } else {
+        toast.error('Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -197,8 +214,12 @@ const SalonRegistration = () => {
                       onChange={handleInputChange}
                       className="bg-white/10 border-white/20 text-white placeholder:text-white/50 pl-10"
                       placeholder="Create a password"
+                      minLength={8}
                     />
                   </div>
+                  <p className="text-xs text-white/60">
+                    Must be 8+ characters with uppercase, lowercase, number, and special character
+                  </p>
                 </div>
 
                 <div className="space-y-2">

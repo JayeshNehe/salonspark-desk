@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCustomers } from "@/hooks/useCustomers";
+import { useHasRole } from "@/hooks/useUserRoles";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NewCustomerForm } from "./NewCustomerForm";
 
@@ -27,6 +28,7 @@ export function CustomerSearchCombobox({ value, onValueChange }: CustomerSearchC
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   
   const { data: customers } = useCustomers(searchQuery);
+  const isAdminOrManager = useHasRole('admin') || useHasRole('manager');
   
   const selectedCustomer = customers?.find(customer => customer.id === value);
 
@@ -65,15 +67,17 @@ export function CustomerSearchCombobox({ value, onValueChange }: CustomerSearchC
                   <p className="text-sm text-muted-foreground mb-2">
                     No customer found
                   </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsNewCustomerDialogOpen(true)}
-                    className="text-xs"
-                  >
-                    <Plus className="w-3 h-3 mr-1" />
-                    Add New Customer
-                  </Button>
+                  {isAdminOrManager && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsNewCustomerDialogOpen(true)}
+                      className="text-xs"
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add New Customer
+                    </Button>
+                  )}
                 </div>
               </CommandEmpty>
               <CommandGroup>
@@ -102,7 +106,7 @@ export function CustomerSearchCombobox({ value, onValueChange }: CustomerSearchC
                     </div>
                   </CommandItem>
                 ))}
-                {customers && customers.length > 0 && (
+                {customers && customers.length > 0 && isAdminOrManager && (
                   <CommandItem
                     onSelect={() => setIsNewCustomerDialogOpen(true)}
                     className="justify-center border-t"
