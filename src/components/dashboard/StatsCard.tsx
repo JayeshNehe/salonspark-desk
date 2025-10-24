@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 
 interface StatsCardProps {
   title: string;
@@ -68,27 +67,16 @@ export function StatsCard({
   if (linkTo) {
     return (
       <Link to={linkTo} className="block">
-        <motion.div
-          whileHover={{ scale: 1.02, y: -4 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-        >
-          <Card className="card-premium hover:shadow-medium transition-smooth cursor-pointer">
-            {cardContent}
-          </Card>
-        </motion.div>
+        <Card className="card-premium hover:shadow-medium transition-smooth cursor-pointer">
+          {cardContent}
+        </Card>
       </Link>
     );
   }
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.02, y: -4 }}
-      transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-    >
-      <Card className="card-premium hover:shadow-medium transition-smooth">
-        {cardContent}
-      </Card>
-    </motion.div>
+    <Card className="card-premium hover:shadow-medium transition-smooth">
+      {cardContent}
+    </Card>
   );
 }

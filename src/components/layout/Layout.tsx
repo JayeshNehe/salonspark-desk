@@ -11,7 +11,7 @@ export function Layout({ children }: LayoutProps) {
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-background via-background to-muted/30 transition-all duration-300">
+        <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-background via-background to-muted/30">
           {children}
         </main>
       </div>
