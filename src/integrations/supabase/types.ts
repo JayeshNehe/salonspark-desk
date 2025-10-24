@@ -25,7 +25,7 @@ export type Database = {
           duration_minutes: number
           id: string
           notes: string | null
-          salon_id: string
+          salon_id: string | null
           service_id: string
           staff_id: string | null
           status: Database["public"]["Enums"]["appointment_status"] | null
@@ -42,7 +42,7 @@ export type Database = {
           duration_minutes: number
           id?: string
           notes?: string | null
-          salon_id: string
+          salon_id?: string | null
           service_id: string
           staff_id?: string | null
           status?: Database["public"]["Enums"]["appointment_status"] | null
@@ -59,7 +59,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           notes?: string | null
-          salon_id?: string
+          salon_id?: string | null
           service_id?: string
           staff_id?: string | null
           status?: Database["public"]["Enums"]["appointment_status"] | null
@@ -97,48 +97,6 @@ export type Database = {
           },
         ]
       }
-      audit_logs: {
-        Row: {
-          action: string
-          created_at: string | null
-          id: string
-          ip_address: unknown | null
-          new_data: Json | null
-          old_data: Json | null
-          record_id: string | null
-          salon_id: string
-          table_name: string
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          action: string
-          created_at?: string | null
-          id?: string
-          ip_address?: unknown | null
-          new_data?: Json | null
-          old_data?: Json | null
-          record_id?: string | null
-          salon_id: string
-          table_name: string
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          action?: string
-          created_at?: string | null
-          id?: string
-          ip_address?: unknown | null
-          new_data?: Json | null
-          old_data?: Json | null
-          record_id?: string | null
-          salon_id?: string
-          table_name?: string
-          user_agent?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       customers: {
         Row: {
           address: string | null
@@ -150,7 +108,7 @@ export type Database = {
           last_name: string
           notes: string | null
           phone: string
-          salon_id: string
+          salon_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -163,7 +121,7 @@ export type Database = {
           last_name: string
           notes?: string | null
           phone: string
-          salon_id: string
+          salon_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -176,7 +134,7 @@ export type Database = {
           last_name?: string
           notes?: string | null
           phone?: string
-          salon_id?: string
+          salon_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -200,7 +158,7 @@ export type Database = {
           id: string
           min_stock_level: number | null
           name: string
-          salon_id: string
+          salon_id: string | null
           selling_price: number
           stock_quantity: number
           supplier: string | null
@@ -217,7 +175,7 @@ export type Database = {
           id?: string
           min_stock_level?: number | null
           name: string
-          salon_id: string
+          salon_id?: string | null
           selling_price: number
           stock_quantity?: number
           supplier?: string | null
@@ -234,7 +192,7 @@ export type Database = {
           id?: string
           min_stock_level?: number | null
           name?: string
-          salon_id?: string
+          salon_id?: string | null
           selling_price?: number
           stock_quantity?: number
           supplier?: string | null
@@ -349,7 +307,7 @@ export type Database = {
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status: Database["public"]["Enums"]["payment_status"] | null
           sale_date: string | null
-          salon_id: string
+          salon_id: string | null
           staff_id: string | null
           subtotal: number
           tax_amount: number | null
@@ -365,7 +323,7 @@ export type Database = {
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           sale_date?: string | null
-          salon_id: string
+          salon_id?: string | null
           staff_id?: string | null
           subtotal: number
           tax_amount?: number | null
@@ -381,7 +339,7 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           sale_date?: string | null
-          salon_id?: string
+          salon_id?: string | null
           staff_id?: string | null
           subtotal?: number
           tax_amount?: number | null
@@ -556,7 +514,7 @@ export type Database = {
           id: string
           name: string
           price: number
-          salon_id: string
+          salon_id: string | null
           status: Database["public"]["Enums"]["service_status"] | null
           updated_at: string | null
         }
@@ -568,7 +526,7 @@ export type Database = {
           id?: string
           name: string
           price: number
-          salon_id: string
+          salon_id?: string | null
           status?: Database["public"]["Enums"]["service_status"] | null
           updated_at?: string | null
         }
@@ -580,7 +538,7 @@ export type Database = {
           id?: string
           name?: string
           price?: number
-          salon_id?: string
+          salon_id?: string | null
           status?: Database["public"]["Enums"]["service_status"] | null
           updated_at?: string | null
         }
@@ -613,7 +571,7 @@ export type Database = {
           phone: string
           role: string
           salary: number | null
-          salon_id: string
+          salon_id: string | null
           specialization: string[] | null
           status: Database["public"]["Enums"]["staff_status"] | null
           updated_at: string | null
@@ -629,7 +587,7 @@ export type Database = {
           phone: string
           role: string
           salary?: number | null
-          salon_id: string
+          salon_id?: string | null
           specialization?: string[] | null
           status?: Database["public"]["Enums"]["staff_status"] | null
           updated_at?: string | null
@@ -645,7 +603,7 @@ export type Database = {
           phone?: string
           role?: string
           salary?: number | null
-          salon_id?: string
+          salon_id?: string | null
           specialization?: string[] | null
           status?: Database["public"]["Enums"]["staff_status"] | null
           updated_at?: string | null
@@ -738,10 +696,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_access_customer: {
-        Args: { _customer_id: string; _salon_id: string; _user_id: string }
-        Returns: boolean
-      }
       get_user_salon_id: {
         Args: { _user_id: string }
         Returns: string
