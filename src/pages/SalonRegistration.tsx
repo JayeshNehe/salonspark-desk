@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft, Building2, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const SalonRegistration = () => {
   const navigate = useNavigate();
@@ -45,15 +46,82 @@ const SalonRegistration = () => {
     setLoading(true);
     
     try {
-      const { error } = await signUp(formData.email, formData.password);
+      // Step 1: Create user account
+      const { error: signUpError } = await signUp(
+        formData.email, 
+        formData.password,
+        {
+          salonName: formData.salonName,
+          ownerName: formData.ownerName,
+          phone: formData.phone,
+          address: formData.address,
+        }
+      );
       
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success('Registration successful! Please check your email for verification.');
-        navigate('/dashboard');
+      if (signUpError) {
+        toast.error(signUpError.message);
+        return;
       }
+
+      // Step 2: Get the user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Failed to retrieve user information');
+        return;
+      }
+
+      // Step 3: Create salon profile
+      const { data: salonData, error: salonError } = await supabase
+        .from('salon_profiles')
+        .insert([{
+          user_id: user.id,
+          salon_name: formData.salonName,
+          owner_name: formData.ownerName,
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+          city: 'City', // Default value - can be updated in settings
+          state: 'State', // Default value - can be updated in settings
+          zip_code: '000000', // Default value - can be updated in settings
+          country: 'India',
+        }])
+        .select()
+        .single();
+
+      if (salonError) {
+        console.error('Salon creation error:', salonError);
+        toast.error('Failed to create salon profile. Please contact support.');
+        return;
+      }
+
+      // Step 4: Assign admin role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert([{
+          user_id: user.id,
+          salon_id: salonData.id,
+          role: 'admin',
+        }]);
+
+      if (roleError) {
+        console.error('Role assignment error:', roleError);
+        toast.error('Failed to assign admin role. Please contact support.');
+        return;
+      }
+
+      // Step 5: Create salon settings
+      await supabase
+        .from('salon_settings')
+        .insert([{ salon_id: salonData.id }]);
+
+      toast.success('Registration successful! Redirecting to dashboard...');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
+      
     } catch (error: any) {
+      console.error('Registration error:', error);
       toast.error('Registration failed. Please try again.');
     } finally {
       setLoading(false);
