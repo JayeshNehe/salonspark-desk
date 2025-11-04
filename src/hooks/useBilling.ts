@@ -14,7 +14,7 @@ interface PendingBilling {
   staff_id?: string;
   sale_id?: string;
   appointment_date: string;
-  appointment_time: string;
+  start_time: string;
 }
 
 interface HeldTransaction {
@@ -45,7 +45,7 @@ export function usePendingBillings() {
           service_id,
           staff_id,
           appointment_date,
-          appointment_time,
+          start_time,
           customers (
             first_name,
             last_name,
@@ -58,7 +58,6 @@ export function usePendingBillings() {
         `)
         .eq('salon_id', salonId)
         .eq('status', 'completed')
-        .eq('billing_generated', false)
         .order('appointment_date', { ascending: false });
       
       if (error) throw error;
@@ -73,7 +72,7 @@ export function usePendingBillings() {
         service_price: apt.services.price,
         staff_id: apt.staff_id,
         appointment_date: apt.appointment_date,
-        appointment_time: apt.appointment_time
+        start_time: apt.start_time
       }));
     },
     enabled: !!salonId,
@@ -95,7 +94,7 @@ export function useHeldTransactions() {
           id,
           customer_id,
           subtotal,
-          discount_amount,
+          discount,
           payment_method,
           created_at,
           customers (
@@ -134,7 +133,7 @@ export function useHeldTransactions() {
           quantity: item.quantity
         })),
         subtotal: sale.subtotal,
-        discount_amount: sale.discount_amount,
+        discount_amount: sale.discount,
         payment_method: sale.payment_method,
         created_at: sale.created_at
       }));
@@ -165,18 +164,18 @@ export function useHoldTransaction() {
     }) => {
       if (!salonId) throw new Error('Salon not found');
       
-      // Create sale with on_hold status
+      // Create sale with pending status
       const { data: sale, error: saleError } = await supabase
         .from('sales')
         .insert({
           customer_id: customerId || undefined,
           salon_id: salonId,
           subtotal,
-          discount_amount: discountAmount,
-          tax_amount: 0,
-          total_amount: subtotal - discountAmount,
+          discount: discountAmount,
+          tax: 0,
+          total: subtotal - discountAmount,
           payment_method: paymentMethod as any,
-          payment_status: 'on_hold' as any
+          payment_status: 'pending' as any
         })
         .select()
         .single();
@@ -250,25 +249,14 @@ export function useCompleteHeldTransaction() {
       const { error: updateError } = await supabase
         .from('sales')
         .update({
-          payment_status: 'paid' as any,
+          payment_status: 'completed' as any,
           payment_method: paymentMethod as any,
-          discount_amount: discountAmount,
-          total_amount: total
+          discount: discountAmount,
+          total: total
         })
         .eq('id', saleId);
 
       if (updateError) throw updateError;
-
-      // If linked to appointment, mark billing as generated
-      if (appointmentId) {
-        await supabase
-          .from('appointments')
-          .update({ 
-            billing_generated: true,
-            billing_id: saleId
-          })
-          .eq('id', appointmentId);
-      }
 
       // Update product stock
       const { data: saleItems } = await supabase

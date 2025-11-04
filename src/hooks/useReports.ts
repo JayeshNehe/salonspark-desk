@@ -39,10 +39,10 @@ export function useDashboardStats() {
       // Get total revenue
       const { data: salesData } = await supabase
         .from('sales')
-        .select('total_amount')
+        .select('total')
         .gte('sale_date', format(lastMonth, 'yyyy-MM-dd'));
       
-      const totalRevenue = salesData?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
+      const totalRevenue = salesData?.reduce((sum, sale) => sum + Number(sale.total), 0) || 0;
       
       // Get total appointments
       const { count: totalAppointments } = await supabase
@@ -89,7 +89,7 @@ export function useRevenueData() {
         .from('sales')
         .select(`
           sale_date,
-          total_amount
+          total
         `)
         .gte('sale_date', format(thirtyDaysAgo, 'yyyy-MM-dd'))
         .order('sale_date');
@@ -110,7 +110,7 @@ export function useRevenueData() {
         if (!revenueByDate[date]) {
           revenueByDate[date] = { revenue: 0, appointments: 0 };
         }
-        revenueByDate[date].revenue += Number(sale.total_amount);
+        revenueByDate[date].revenue += Number(sale.total);
       });
       
       appointmentData?.forEach(appointment => {
@@ -137,8 +137,7 @@ export function useServiceReports() {
       const { data } = await supabase
         .from('appointments')
         .select(`
-          services (name),
-          total_amount
+          services (name, price)
         `)
         .eq('status', 'completed');
       
@@ -146,11 +145,12 @@ export function useServiceReports() {
       
       data?.forEach(appointment => {
         const serviceName = appointment.services?.name || 'Unknown Service';
+        const servicePrice = appointment.services?.price || 0;
         if (!serviceStats[serviceName]) {
           serviceStats[serviceName] = { bookings: 0, revenue: 0 };
         }
         serviceStats[serviceName].bookings += 1;
-        serviceStats[serviceName].revenue += Number(appointment.total_amount || 0);
+        serviceStats[serviceName].revenue += Number(servicePrice);
       });
       
       return Object.entries(serviceStats).map(([service_name, stats]) => ({
@@ -170,7 +170,7 @@ export function useStaffReports() {
         .from('appointments')
         .select(`
           staff (first_name, last_name),
-          total_amount
+          services (price)
         `)
         .eq('status', 'completed');
       
@@ -180,11 +180,12 @@ export function useStaffReports() {
         const staffName = appointment.staff 
           ? `${appointment.staff.first_name} ${appointment.staff.last_name}`
           : 'Unassigned';
+        const servicePrice = appointment.services?.price || 0;
         if (!staffStats[staffName]) {
           staffStats[staffName] = { appointments: 0, revenue: 0 };
         }
         staffStats[staffName].appointments += 1;
-        staffStats[staffName].revenue += Number(appointment.total_amount || 0);
+        staffStats[staffName].revenue += Number(servicePrice);
       });
       
       return Object.entries(staffStats).map(([staff_name, stats]) => ({

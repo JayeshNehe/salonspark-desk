@@ -174,7 +174,7 @@ export function useProducts() {
       return data?.map(product => ({
         id: product.id,
         name: product.name,
-        sku: product.barcode || '',
+        sku: product.sku || '',
         category: product.category || 'General',
         price: Number(product.selling_price),
         cost: Number(product.cost_price),
@@ -200,7 +200,7 @@ export function useLowStockProducts() {
         .map(product => ({
           id: product.id,
           name: product.name,
-          sku: product.barcode || '',
+          sku: product.sku || '',
           category: product.category || 'General',
           price: Number(product.selling_price),
           cost: Number(product.cost_price),
@@ -243,10 +243,10 @@ export function useAppointments(filters?: { from?: string; to?: string; staffId?
         serviceId: appointment.service_id,
         serviceName: 'Service',
         date: appointment.appointment_date,
-        time: appointment.appointment_time,
-        duration: appointment.duration_minutes,
+        time: appointment.start_time,
+        duration: 60,
         status: appointment.status as 'scheduled' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled' | 'no-show',
-        totalAmount: Number(appointment.total_amount),
+        totalAmount: 0,
         notes: appointment.notes || '',
       })) || [];
     },

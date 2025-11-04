@@ -8,15 +8,14 @@ import { productSchema } from '@/lib/validations';
 interface Product {
   id: string;
   name: string;
-  description?: string;
-  brand?: string;
-  category?: string;
-  barcode?: string;
+  category: string;
+  sku?: string;
   supplier?: string;
   cost_price: number;
   selling_price: number;
   stock_quantity: number;
   min_stock_level: number;
+  status?: string;
   created_at: string;
   updated_at: string;
 }

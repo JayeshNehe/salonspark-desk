@@ -7,16 +7,14 @@ interface Sale {
   id: string;
   customer_id?: string;
   staff_id?: string;
-  appointment_id?: string;
   subtotal: number;
-  tax_amount: number;
-  discount_amount: number;
-  total_amount: number;
-  payment_method: 'cash' | 'card' | 'upi' | 'wallet';
-  payment_status: 'pending' | 'paid' | 'refunded' | 'failed' | 'on_hold';
+  tax: number;
+  discount: number;
+  total: number;
+  payment_method: string;
+  payment_status: string;
   sale_date: string;
   created_at: string;
-  updated_at: string;
   customers?: {
     first_name: string;
     last_name: string;
@@ -75,9 +73,9 @@ export function useCreateSale() {
     mutationFn: async (saleData: {
       customer_id?: string;
       subtotal: number;
-      tax_amount: number;
-      discount_amount: number;
-      total_amount: number;
+      tax: number;
+      discount: number;
+      total: number;
       payment_method: 'cash' | 'card' | 'upi';
       items: Array<{
         service_id?: string;
@@ -103,11 +101,11 @@ export function useCreateSale() {
           customer_id: saleData.customer_id,
           salon_id: salonId,
           subtotal: saleData.subtotal,
-          tax_amount: saleData.tax_amount,
-          discount_amount: saleData.discount_amount,
-          total_amount: saleData.total_amount,
+          tax: saleData.tax,
+          discount: saleData.discount,
+          total: saleData.total,
           payment_method: saleData.payment_method,
-          payment_status: 'paid'
+          payment_status: 'completed'
         }])
         .select()
         .single();
@@ -154,14 +152,14 @@ export function useTodaysSales() {
       
       const { data, error } = await supabase
         .from('sales')
-        .select('total_amount')
+        .select('total')
         .gte('sale_date', today)
-        .eq('payment_status', 'paid');
+        .eq('payment_status', 'completed');
       
       if (error) throw error;
       
       return {
-        totalRevenue: data?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0,
+        totalRevenue: data?.reduce((sum, sale) => sum + Number(sale.total), 0) || 0,
         totalSales: data?.length || 0
       };
     },

@@ -15,7 +15,7 @@ interface Staff {
   hire_date: string;
   salary?: number;
   commission_rate?: number;
-  status: 'active' | 'inactive' | 'on_leave';
+  status: string;
   created_at: string;
   updated_at: string;
 }

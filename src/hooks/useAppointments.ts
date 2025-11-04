@@ -10,11 +10,10 @@ interface Appointment {
   staff_id?: string;
   service_id: string;
   appointment_date: string;
-  appointment_time: string;
-  duration_minutes: number;
-  status: 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show' | 'waiting';
+  start_time: string;
+  end_time: string;
+  status: string;
   notes?: string;
-  total_amount: number;
   created_at: string;
   updated_at: string;
   customers?: {
@@ -25,6 +24,7 @@ interface Appointment {
   services?: {
     name: string;
     price: number;
+    duration_minutes: number;
   };
   staff?: {
     first_name: string;
@@ -47,7 +47,8 @@ export function useAppointments() {
           ),
           services (
             name,
-            price
+            price,
+            duration_minutes
           ),
           staff (
             first_name,

@@ -12,7 +12,7 @@ interface Service {
   category_id?: string;
   duration_minutes: number;
   price: number;
-  status: 'active' | 'inactive';
+  status: string;
   created_at: string;
   updated_at: string;
   service_categories?: {
