@@ -306,8 +306,8 @@ export default function Inventory() {
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-lg">{product.name}</CardTitle>
-                        {product.brand && (
-                          <p className="text-sm text-muted-foreground">{product.brand}</p>
+                        {product.category && (
+                          <p className="text-sm text-muted-foreground">{product.category}</p>
                         )}
                       </div>
                       <Badge variant={stockStatus.variant}>
@@ -367,8 +367,8 @@ export default function Inventory() {
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-lg">{product.name}</CardTitle>
-                        {product.brand && (
-                          <p className="text-sm text-muted-foreground">{product.brand}</p>
+                        {product.category && (
+                          <p className="text-sm text-muted-foreground">{product.category}</p>
                         )}
                       </div>
                       <Badge variant="destructive">

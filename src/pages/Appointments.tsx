@@ -27,7 +27,7 @@ export default function Appointments() {
     staff_id: '',
     service_id: '',
     appointment_date: new Date().toISOString().split('T')[0], // Today's date
-    appointment_time: '',
+    start_time: '',
     notes: ''
   });
 
@@ -65,7 +65,7 @@ export default function Appointments() {
       
       // Get customer details to search birthdate if available
       const customer = customers?.find(c => c.id === appointment.customer_id);
-      const birthdate = customer?.date_of_birth ? new Date(customer.date_of_birth).toLocaleDateString() : '';
+      const birthdate = customer?.birthday ? new Date(customer.birthday).toLocaleDateString() : '';
       
       return customerName.includes(query) || 
              customerPhone.includes(query) || 
@@ -83,10 +83,19 @@ export default function Appointments() {
       return;
     }
 
+    // Calculate end time based on service duration
+    const startDateTime = new Date(`${formData.appointment_date}T${formData.start_time}`);
+    const endDateTime = new Date(startDateTime.getTime() + selectedService.duration_minutes * 60000);
+    const endTime = `${endDateTime.getHours().toString().padStart(2, '0')}:${endDateTime.getMinutes().toString().padStart(2, '0')}`;
+
     await createAppointment.mutateAsync({
-      ...formData,
-      duration_minutes: selectedService.duration_minutes,
-      total_amount: selectedService.price,
+      customer_id: formData.customer_id,
+      service_id: formData.service_id,
+      staff_id: formData.staff_id || undefined,
+      appointment_date: formData.appointment_date,
+      start_time: formData.start_time,
+      end_time: endTime,
+      notes: formData.notes || undefined,
       status: 'scheduled'
     });
     
@@ -96,7 +105,7 @@ export default function Appointments() {
       staff_id: '',
       service_id: '',
       appointment_date: new Date().toISOString().split('T')[0],
-      appointment_time: '',
+      start_time: '',
       notes: ''
     });
   };
@@ -108,7 +117,7 @@ export default function Appointments() {
       staff_id: appointment.staff_id || '',
       service_id: appointment.service_id,
       appointment_date: appointment.appointment_date,
-      appointment_time: appointment.appointment_time,
+      start_time: appointment.start_time,
       notes: appointment.notes || ''
     });
     setIsRescheduleDialogOpen(true);
@@ -122,7 +131,7 @@ export default function Appointments() {
       id: reschedulingAppointment.id,
       data: {
         appointment_date: formData.appointment_date,
-        appointment_time: formData.appointment_time,
+        start_time: formData.start_time,
       }
     });
     
@@ -133,7 +142,7 @@ export default function Appointments() {
       staff_id: '',
       service_id: '',
       appointment_date: '',
-      appointment_time: '',
+      start_time: '',
       notes: ''
     });
   };
@@ -238,8 +247,8 @@ export default function Appointments() {
                 <TimeSlotSelector
                   selectedDate={formData.appointment_date}
                   serviceDuration={selectedService?.duration_minutes || 0}
-                  selectedTime={formData.appointment_time}
-                  onTimeSelect={(time) => setFormData(prev => ({ ...prev, appointment_time: time }))}
+                  selectedTime={formData.start_time}
+                  onTimeSelect={(time) => setFormData(prev => ({ ...prev, start_time: time }))}
                 />
               </div>
               
@@ -256,7 +265,7 @@ export default function Appointments() {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={createAppointment.isPending || !formData.customer_id || !formData.service_id || !formData.appointment_date || !formData.appointment_time}
+                disabled={createAppointment.isPending || !formData.customer_id || !formData.service_id || !formData.appointment_date || !formData.start_time}
               >
                 {createAppointment.isPending ? "Booking..." : "Book Appointment"}
               </Button>
@@ -286,12 +295,12 @@ export default function Appointments() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reschedule_appointment_time">Time</Label>
+                  <Label htmlFor="reschedule_start_time">Time</Label>
                   <Input
-                    id="reschedule_appointment_time"
+                    id="reschedule_start_time"
                     type="time"
-                    value={formData.appointment_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, appointment_time: e.target.value }))}
+                    value={formData.start_time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
                     required
                   />
                 </div>
@@ -366,7 +375,7 @@ export default function Appointments() {
                         <p className="font-medium">{appointment.services?.name}</p>
                         <p className="text-sm text-muted-foreground">
                           <Clock className="w-3 h-3 inline mr-1" />
-                          {appointment.duration_minutes} min
+                          {appointment.services?.duration_minutes} min
                         </p>
                       </div>
                     </TableCell>
@@ -379,12 +388,12 @@ export default function Appointments() {
                           {new Date(appointment.appointment_date).toLocaleDateString()}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {appointment.appointment_time}
+                          {appointment.start_time}
                         </p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="font-medium">{formatCurrency(appointment.total_amount)}</span>
+                      <span className="font-medium">{formatCurrency(appointment.services?.price || 0)}</span>
                     </TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(appointment.status)}>

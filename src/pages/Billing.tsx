@@ -141,13 +141,12 @@ export default function Billing() {
         .insert({
           customer_id: selectedCustomer || null,
           salon_id: salonId,
-          appointment_id: selectedAppointmentId || null,
           subtotal: subtotal,
-          discount_amount: discountAmount,
-          tax_amount: 0,
-          total_amount: total,
+          discount: discountAmount,
+          tax: 0,
+          total: total,
           payment_method: paymentMethod,
-          payment_status: 'paid'
+          payment_status: 'completed'
         })
         .select()
         .single();
@@ -170,13 +169,12 @@ export default function Billing() {
 
       if (itemsError) throw itemsError;
 
-      // Mark appointment billing as generated if from appointment
+      // Update appointment status to billed if from appointment
       if (selectedAppointmentId) {
         await supabase
           .from('appointments')
           .update({ 
-            billing_generated: true,
-            billing_id: saleData.id
+            status: 'completed'
           })
           .eq('id', selectedAppointmentId);
       }
@@ -286,7 +284,7 @@ export default function Billing() {
     name: product.name,
     type: 'product' as const,
     price: product.selling_price,
-    brand: product.brand,
+    category: product.category,
     stock_quantity: product.stock_quantity
   })) || [];
 
@@ -440,9 +438,9 @@ export default function Billing() {
                         <div className="max-h-96 overflow-y-auto">
                           <Table>
                             <TableHeader>
-                              <TableRow>
+                               <TableRow>
                                 <TableHead>Product Name</TableHead>
-                                <TableHead>Brand</TableHead>
+                                <TableHead>Category</TableHead>
                                 <TableHead>Stock</TableHead>
                                 <TableHead>Price</TableHead>
                                 <TableHead>Action</TableHead>
@@ -450,9 +448,9 @@ export default function Billing() {
                             </TableHeader>
                             <TableBody>
                               {filteredProducts.map((product) => (
-                                <TableRow key={product.id}>
+                                 <TableRow key={product.id}>
                                   <TableCell className="font-medium">{product.name}</TableCell>
-                                  <TableCell>{product.brand || 'N/A'}</TableCell>
+                                  <TableCell>{product.category || 'N/A'}</TableCell>
                                   <TableCell>
                                     <Badge variant={product.stock_quantity > 0 ? 'default' : 'destructive'}>
                                       {product.stock_quantity} units

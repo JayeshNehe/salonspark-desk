@@ -167,10 +167,16 @@ export function useCheckInAppointment() {
 
       if (appointmentError) throw appointmentError;
 
-      // Update appointment status to in_progress and schedule auto-complete
-      const completionTime = new Date();
-      completionTime.setMinutes(completionTime.getMinutes() + appointment.duration_minutes);
+      // Get service duration for scheduling auto-complete
+      const { data: service } = await supabase
+        .from('services')
+        .select('duration_minutes')
+        .eq('id', appointment.service_id)
+        .single();
 
+      const durationMinutes = service?.duration_minutes || 30;
+
+      // Update appointment status to in_progress
       const { error: updateError } = await supabase
         .from('appointments')
         .update({ 
@@ -190,7 +196,7 @@ export function useCheckInAppointment() {
         
         queryClient.invalidateQueries({ queryKey: ['appointments'] });
         queryClient.invalidateQueries({ queryKey: ['pending-billings'] });
-      }, appointment.duration_minutes * 60 * 1000);
+      }, durationMinutes * 60 * 1000);
 
       return { appointment };
     },

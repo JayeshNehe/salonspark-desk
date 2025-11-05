@@ -18,7 +18,7 @@ export function NewCustomerForm({ onCustomerCreated, onCancel }: NewCustomerForm
     phone: '',
     email: '',
     address: '',
-    date_of_birth: '',
+    birthday: '',
     notes: ''
   });
 
@@ -31,7 +31,7 @@ export function NewCustomerForm({ onCustomerCreated, onCancel }: NewCustomerForm
         ...formData,
         email: formData.email || undefined,
         address: formData.address || undefined,
-        date_of_birth: formData.date_of_birth || undefined,
+        birthday: formData.birthday || undefined,
         notes: formData.notes || undefined
       });
       onCustomerCreated(customer.id);
@@ -89,10 +89,10 @@ export function NewCustomerForm({ onCustomerCreated, onCancel }: NewCustomerForm
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="date_of_birth">Date of Birth</Label>
+        <Label htmlFor="birthday">Date of Birth</Label>
         <DatePicker
-          value={formData.date_of_birth}
-          onValueChange={(value) => handleChange('date_of_birth', value)}
+          value={formData.birthday}
+          onValueChange={(value) => handleChange('birthday', value)}
           disablePast={false}
           disableFuture={true}
         />

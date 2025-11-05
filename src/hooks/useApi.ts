@@ -348,7 +348,7 @@ export function useDashboardData() {
         .gte('created_at', today);
         
       // Calculate revenue
-      const todayRevenue = sales?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
+      const todayRevenue = sales?.reduce((sum, sale) => sum + Number(sale.total), 0) || 0;
       
       return {
         todayRevenue,

@@ -47,8 +47,8 @@ export function TimeSlotSelector({
           if (appointment.appointment_date !== selectedDate) return false;
           if (appointment.status === 'cancelled') return false;
           
-          const appointmentStart = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
-          const appointmentEnd = new Date(appointmentStart.getTime() + appointment.duration_minutes * 60 * 1000);
+          const appointmentStart = new Date(`${appointment.appointment_date}T${appointment.start_time}`);
+          const appointmentEnd = new Date(`${appointment.appointment_date}T${appointment.end_time}`);
           
           // Check for overlap
           return (slotDateTime < appointmentEnd && slotEndTime > appointmentStart);
