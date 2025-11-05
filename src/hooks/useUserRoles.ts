@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { Database } from '@/integrations/supabase/types';
 
-export type AppRole = 'admin' | 'manager' | 'staff' | 'user';
+export type AppRole = 'admin' | 'manager' | 'staff' | 'user' | 'receptionist';
 
 interface UserRole {
   id: string;
@@ -72,7 +73,7 @@ export function useAssignRole() {
       
       const { data, error } = await supabase
         .from('user_roles')
-        .insert([{ user_id: userId, salon_id: salonId, role }])
+        .insert([{ user_id: userId, salon_id: salonId, role: role as Database['public']['Enums']['app_role'] }])
         .select()
         .single();
       

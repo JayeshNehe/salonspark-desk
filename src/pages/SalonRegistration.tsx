@@ -46,7 +46,7 @@ const SalonRegistration = () => {
     setLoading(true);
     
     try {
-      // Step 1: Create user account
+      // Step 1: Create user account with admin role
       const { error: signUpError } = await signUp(
         formData.email, 
         formData.password,
@@ -55,6 +55,7 @@ const SalonRegistration = () => {
           ownerName: formData.ownerName,
           phone: formData.phone,
           address: formData.address,
+          user_type: 'admin', // Salon registration always creates admin accounts
         }
       );
       

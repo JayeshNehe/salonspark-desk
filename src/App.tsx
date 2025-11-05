@@ -7,6 +7,7 @@ import { Layout } from "@/components/layout/Layout";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Appointments from "./pages/Appointments";
 import Customers from "./pages/Customers";
@@ -35,15 +36,20 @@ const App = () => (
               <Route path="/" element={<Home />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/salon-registration" element={<SalonRegistration />} />
+              {/* Shared routes accessible by both admin and receptionist */}
               <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
-              <Route path="/appointments" element={<ProtectedRoute><Layout><Appointments /></Layout></ProtectedRoute>} />
-              <Route path="/customers" element={<ProtectedRoute><Layout><Customers /></Layout></ProtectedRoute>} />
-              <Route path="/services" element={<ProtectedRoute><Layout><Services /></Layout></ProtectedRoute>} />
-              <Route path="/billing" element={<ProtectedRoute><Layout><Billing /></Layout></ProtectedRoute>} />
-              <Route path="/inventory" element={<ProtectedRoute><Layout><Inventory /></Layout></ProtectedRoute>} />
-              <Route path="/staff" element={<ProtectedRoute><Layout><Staff /></Layout></ProtectedRoute>} />
-              <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
+              
+              {/* Receptionist routes */}
+              <Route path="/appointments" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin', 'receptionist']}><Layout><Appointments /></Layout></RoleProtectedRoute></ProtectedRoute>} />
+              <Route path="/customers" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin', 'receptionist']}><Layout><Customers /></Layout></RoleProtectedRoute></ProtectedRoute>} />
+              <Route path="/billing" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin', 'receptionist']}><Layout><Billing /></Layout></RoleProtectedRoute></ProtectedRoute>} />
+              
+              {/* Admin-only routes */}
+              <Route path="/services" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Services /></Layout></RoleProtectedRoute></ProtectedRoute>} />
+              <Route path="/inventory" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Inventory /></Layout></RoleProtectedRoute></ProtectedRoute>} />
+              <Route path="/staff" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Staff /></Layout></RoleProtectedRoute></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Reports /></Layout></RoleProtectedRoute></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Settings /></Layout></RoleProtectedRoute></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +15,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [userType, setUserType] = useState<'admin' | 'receptionist'>('receptionist');
   const [loading, setLoading] = useState(false);
   const { user, signIn, signUp } = useAuth();
   const { toast } = useToast();
@@ -111,6 +113,7 @@ export default function Auth() {
       const { error } = await signUp(email, password, {
         first_name: firstName,
         last_name: lastName,
+        user_type: userType,
       });
       
       if (error) {
@@ -148,6 +151,32 @@ export default function Auth() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* User Type Selection */}
+          <div className="space-y-4 mb-6">
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={() => setUserType('admin')}
+                variant={userType === 'admin' ? 'default' : 'outline'}
+                className={cn(
+                  "transition-smooth",
+                  userType === 'admin' && "bg-gradient-primary text-primary-foreground shadow-primary"
+                )}
+              >
+                Admin Login
+              </Button>
+              <Button
+                onClick={() => setUserType('receptionist')}
+                variant={userType === 'receptionist' ? 'default' : 'outline'}
+                className={cn(
+                  "transition-smooth",
+                  userType === 'receptionist' && "bg-gradient-primary text-primary-foreground shadow-primary"
+                )}
+              >
+                Receptionist Login
+              </Button>
+            </div>
+          </div>
+          
           {/* Demo Login Button */}
           <div className="space-y-4 mb-6">
             <Button 

@@ -1,4 +1,4 @@
-import { Sidebar } from "./Sidebar";
+import { RoleBasedSidebar } from "./RoleBasedSidebar";
 import { Header } from "./Header";
 
 interface LayoutProps {
@@ -8,7 +8,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
+      <RoleBasedSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-background via-background to-muted/30">
