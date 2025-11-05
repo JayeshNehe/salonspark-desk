@@ -47,7 +47,7 @@ const SalonRegistration = () => {
     
     try {
       // Step 1: Create user account with admin role
-      const { error: signUpError } = await signUp(
+      const { error: signUpError, user } = await signUp(
         formData.email, 
         formData.password,
         {
@@ -64,11 +64,9 @@ const SalonRegistration = () => {
         return;
       }
 
-      // Step 2: Get the user ID
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      // Step 2: Check if user was created
       if (!user) {
-        toast.error('Failed to retrieve user information');
+        toast.error('Failed to create user account. Please try again.');
         return;
       }
 
@@ -78,9 +76,7 @@ const SalonRegistration = () => {
         .insert([{
           user_id: user.id,
           salon_name: formData.salonName,
-          owner_name: formData.ownerName,
           phone: formData.phone,
-          email: formData.email,
           address: formData.address,
           city: 'City', // Default value - can be updated in settings
           state: 'State', // Default value - can be updated in settings
