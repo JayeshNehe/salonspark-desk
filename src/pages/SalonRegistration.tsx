@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const SalonRegistration = () => {
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { signUp, signIn } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -67,6 +67,14 @@ const SalonRegistration = () => {
       // Step 2: Check if user was created
       if (!user) {
         toast.error('Failed to create user account. Please try again.');
+        return;
+      }
+
+      // Step 2.5: Sign in to establish session for RLS policies
+      const { error: signInError } = await signIn(formData.email, formData.password);
+      
+      if (signInError) {
+        toast.error('Account created but failed to sign in. Please try logging in manually.');
         return;
       }
 
