@@ -46,7 +46,7 @@ const SalonRegistration = () => {
     setLoading(true);
     
     try {
-      // Step 1: Create user account with admin role
+      // Step 1: Create user account
       const { error: signUpError, user } = await signUp(
         formData.email, 
         formData.password,
@@ -55,7 +55,7 @@ const SalonRegistration = () => {
           ownerName: formData.ownerName,
           phone: formData.phone,
           address: formData.address,
-          user_type: 'admin', // Salon registration always creates admin accounts
+          user_type: 'admin',
         }
       );
       
@@ -64,13 +64,12 @@ const SalonRegistration = () => {
         return;
       }
 
-      // Step 2: Check if user was created
       if (!user) {
         toast.error('Failed to create user account. Please try again.');
         return;
       }
 
-      // Step 2.5: Sign in to establish session for RLS policies
+      // Step 2: Sign in to establish session
       const { error: signInError } = await signIn(formData.email, formData.password);
       
       if (signInError) {
@@ -78,47 +77,29 @@ const SalonRegistration = () => {
         return;
       }
 
-      // Step 3: Create salon profile
-      const { data: salonData, error: salonError } = await supabase
-        .from('salon_profiles')
-        .insert([{
-          user_id: user.id,
-          salon_name: formData.salonName,
-          phone: formData.phone,
-          address: formData.address,
-          city: 'City', // Default value - can be updated in settings
-          state: 'State', // Default value - can be updated in settings
-          zip_code: '000000', // Default value - can be updated in settings
-          country: 'India',
-        }])
-        .select()
-        .single();
+      // Step 3: Complete salon registration using secure database function
+      const { data: result, error: registrationError } = await supabase
+        .rpc('complete_salon_registration', {
+          p_user_id: user.id,
+          p_salon_name: formData.salonName,
+          p_phone: formData.phone,
+          p_address: formData.address,
+        });
 
-      if (salonError) {
-        console.error('Salon creation error:', salonError);
-        toast.error('Failed to create salon profile. Please contact support.');
+      if (registrationError) {
+        console.error('Registration error:', registrationError);
+        toast.error('Failed to complete registration. Please contact support.');
         return;
       }
 
-      // Step 4: Assign admin role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          user_id: user.id,
-          salon_id: salonData.id,
-          role: 'admin',
-        }]);
-
-      if (roleError) {
-        console.error('Role assignment error:', roleError);
-        toast.error('Failed to assign admin role. Please contact support.');
+      // Type-safe result check
+      const registrationResult = result as { success: boolean; error?: string; salon_id?: string };
+      
+      if (!registrationResult?.success) {
+        console.error('Registration failed:', registrationResult?.error);
+        toast.error(registrationResult?.error || 'Failed to complete registration.');
         return;
       }
-
-      // Step 5: Create salon settings
-      await supabase
-        .from('salon_settings')
-        .insert([{ salon_id: salonData.id }]);
 
       toast.success('Registration successful! Redirecting to dashboard...');
       setTimeout(() => {

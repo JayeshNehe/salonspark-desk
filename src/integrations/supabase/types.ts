@@ -584,6 +584,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_salon_registration: {
+        Args: {
+          p_address: string
+          p_city?: string
+          p_country?: string
+          p_phone: string
+          p_salon_name: string
+          p_state?: string
+          p_user_id: string
+          p_zip_code?: string
+        }
+        Returns: Json
+      }
       get_user_salon_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
