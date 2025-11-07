@@ -24,6 +24,7 @@ const adminNavigation = [
   { name: "Services", href: "/services", icon: Scissors },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "User Management", href: "/user-management", icon: Users },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

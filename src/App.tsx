@@ -20,6 +20,7 @@ import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import SalonRegistration from "./pages/SalonRegistration";
+import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/inventory" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Inventory /></Layout></RoleProtectedRoute></ProtectedRoute>} />
               <Route path="/staff" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Staff /></Layout></RoleProtectedRoute></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Reports /></Layout></RoleProtectedRoute></ProtectedRoute>} />
+              <Route path="/user-management" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><UserManagement /></Layout></RoleProtectedRoute></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Settings /></Layout></RoleProtectedRoute></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
