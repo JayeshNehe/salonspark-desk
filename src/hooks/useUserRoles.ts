@@ -38,7 +38,7 @@ export function useHasRole(requiredRole: AppRole) {
   return roles?.some(role => role.role === requiredRole) || false;
 }
 
-// Get user's salon ID
+// Get user's salon ID (works for both salon owners and staff/receptionists)
 export function useUserSalonId() {
   return useQuery({
     queryKey: ['user-salon-id'],
@@ -46,14 +46,25 @@ export function useUserSalonId() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const { data, error } = await supabase
+      // First, check if user owns a salon
+      const { data: salonData, error: salonError } = await supabase
         .from('salon_profiles')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
       
-      if (error) throw error;
-      return data?.id || null;
+      if (salonError) throw salonError;
+      if (salonData?.id) return salonData.id;
+
+      // If not a salon owner, check if user has a role (receptionist/staff) in a salon
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('salon_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (roleError) throw roleError;
+      return roleData?.salon_id || null;
     },
   });
 }

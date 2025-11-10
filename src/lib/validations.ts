@@ -143,9 +143,8 @@ export const appointmentSchema = z.object({
   staff_id: z.string().uuid({ message: "Valid staff member is required" }).optional(),
   service_id: z.string().uuid({ message: "Valid service is required" }),
   appointment_date: z.string().min(1, { message: "Appointment date is required" }),
-  appointment_time: z.string().min(1, { message: "Appointment time is required" }),
-  duration_minutes: z.number().min(1, { message: "Duration is required" }),
-  total_amount: z.number().min(0, { message: "Total amount must be positive" }),
+  start_time: z.string().min(1, { message: "Start time is required" }),
+  end_time: z.string().min(1, { message: "End time is required" }),
   notes: z.string()
     .max(1000, { message: "Notes must be less than 1000 characters" })
     .optional(),
