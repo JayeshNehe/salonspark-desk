@@ -4,40 +4,86 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Phone, Mail, Users } from "lucide-react";
-import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
+import { Plus, Search, Phone, Mail, Users, Pencil, Trash2 } from "lucide-react";
+import { useCustomers, useCreateCustomer, useUpdateCustomer, useDeleteCustomer } from "@/hooks/useCustomers";
 
 export default function Customers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     email: '',
     phone: '',
     address: '',
-    date_of_birth: '',
+    birthday: '',
     notes: ''
   });
 
   const { data: customers, isLoading } = useCustomers(searchQuery);
   const createCustomer = useCreateCustomer();
+  const updateCustomer = useUpdateCustomer();
+  const deleteCustomer = useDeleteCustomer();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await createCustomer.mutateAsync(formData);
-    setIsDialogOpen(false);
+  const resetForm = () => {
     setFormData({
       first_name: '',
       last_name: '',
       email: '',
       phone: '',
       address: '',
-      date_of_birth: '',
+      birthday: '',
       notes: ''
     });
+    setIsEditMode(false);
+    setEditingCustomerId(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isEditMode && editingCustomerId) {
+      await updateCustomer.mutateAsync({ id: editingCustomerId, data: formData });
+    } else {
+      await createCustomer.mutateAsync(formData);
+    }
+    resetForm();
+    setIsDialogOpen(false);
+  };
+
+  const handleEditCustomer = (customer: any) => {
+    setFormData({
+      first_name: customer.first_name,
+      last_name: customer.last_name,
+      email: customer.email || '',
+      phone: customer.phone,
+      address: customer.address || '',
+      birthday: customer.birthday || '',
+      notes: customer.notes || ''
+    });
+    setEditingCustomerId(customer.id);
+    setIsEditMode(true);
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setCustomerToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (customerToDelete) {
+      await deleteCustomer.mutateAsync(customerToDelete);
+      setDeleteConfirmOpen(false);
+      setCustomerToDelete(null);
+    }
   };
 
   return (
@@ -51,7 +97,10 @@ export default function Customers() {
             Manage your salon's customer database
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-primary">
               <Plus className="w-4 h-4 mr-2" />
@@ -60,9 +109,9 @@ export default function Customers() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Add New Customer</DialogTitle>
+              <DialogTitle>{isEditMode ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
               <DialogDescription>
-                Create a new customer profile for your salon.
+                {isEditMode ? 'Update customer information.' : 'Create a new customer profile for your salon.'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -113,12 +162,12 @@ export default function Customers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="date_of_birth">Date of Birth</Label>
+                <Label htmlFor="birthday">Date of Birth</Label>
                 <Input
-                  id="date_of_birth"
+                  id="birthday"
                   type="date"
-                  value={formData.date_of_birth}
-                  onChange={(e) => setFormData(prev => ({ ...prev, date_of_birth: e.target.value }))}
+                  value={formData.birthday}
+                  onChange={(e) => setFormData(prev => ({ ...prev, birthday: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
@@ -130,8 +179,11 @@ export default function Customers() {
                   placeholder="Any special notes about the customer..."
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={createCustomer.isPending}>
-                {createCustomer.isPending ? "Creating..." : "Create Customer"}
+              <Button type="submit" className="w-full" disabled={createCustomer.isPending || updateCustomer.isPending}>
+                {isEditMode 
+                  ? (updateCustomer.isPending ? "Updating..." : "Update Customer")
+                  : (createCustomer.isPending ? "Creating..." : "Create Customer")
+                }
               </Button>
             </form>
           </DialogContent>
@@ -211,9 +263,25 @@ export default function Customers() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditCustomer(customer)}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteClick(customer.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -226,6 +294,23 @@ export default function Customers() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the customer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
