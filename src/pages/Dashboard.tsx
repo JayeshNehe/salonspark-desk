@@ -2,27 +2,27 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Calendar, 
-  IndianRupee, 
   Clock,
   Plus,
   ArrowRight,
   Package,
   Users,
+  IndianRupee,
 } from "lucide-react";
-import { useDashboardData, useLowStockProducts } from '@/hooks/useApi';
+import { useDashboardStats } from '@/hooks/useReports';
+import { useLowStockProducts } from '@/hooks/useProducts';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { data: dashboardData, isLoading: isDashboardLoading } = useDashboardData();
+  const { data: dashboardStats, isLoading: isStatsLoading } = useDashboardStats();
   const { data: lowStockProducts } = useLowStockProducts();
 
   const stats = [
     {
-      title: "Appointments Today",
-      value: isDashboardLoading ? "..." : dashboardData?.todayAppointments.toString() || "0",
+      title: "Appointments (30 days)",
+      value: isStatsLoading ? "..." : dashboardStats?.totalAppointments.toString() || "0",
       change: "Click to view all",
       changeType: "neutral" as const,
       icon: Calendar,
