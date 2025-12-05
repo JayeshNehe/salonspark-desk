@@ -100,15 +100,6 @@ export default function Staff() {
     setNewStaff(prev => ({ ...prev, specialization: specializations }));
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'default';
-      case 'inactive': return 'secondary';
-      case 'on_leave': return 'destructive';
-      default: return 'secondary';
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -271,24 +262,6 @@ export default function Staff() {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={newStaff.status} 
-                  onValueChange={(value: 'active' | 'inactive' | 'on_leave') => 
-                    setNewStaff(prev => ({ ...prev, status: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="on_leave">On Leave</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               
               <div className="flex gap-2 pt-4">
                 <Button type="submit" disabled={createStaff.isPending || updateStaff.isPending}>
@@ -325,9 +298,21 @@ export default function Staff() {
                     <p className="text-sm text-muted-foreground">{member.role}</p>
                   </div>
                 </div>
-                <Badge variant={getStatusColor(member.status) as any}>
-                  {member.status.replace('_', ' ')}
-                </Badge>
+                <Select 
+                  value={member.status} 
+                  onValueChange={(value: 'active' | 'inactive' | 'on_leave') => 
+                    updateStaff.mutate({ id: member.id, data: { status: value } })
+                  }
+                >
+                  <SelectTrigger className="w-[110px] h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="on_leave">On Leave</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardHeader>
             <CardContent>
