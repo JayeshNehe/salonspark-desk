@@ -226,7 +226,14 @@ export default function Appointments() {
                     <SelectContent>
                       {sortedStaff.map(member => (
                         <SelectItem key={member.id} value={member.id}>
-                          {member.first_name} {member.last_name} - {member.role}
+                          <span className="flex items-center gap-2">
+                            {member.first_name} {member.last_name} - {member.role}
+                            {member.status === 'on_leave' && (
+                              <span className="text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">
+                                On Leave
+                              </span>
+                            )}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
