@@ -225,12 +225,21 @@ export default function Appointments() {
                     </SelectTrigger>
                     <SelectContent>
                       {sortedStaff.map(member => (
-                        <SelectItem key={member.id} value={member.id}>
+                        <SelectItem 
+                          key={member.id} 
+                          value={member.id} 
+                          disabled={member.status !== 'active'}
+                        >
                           <span className="flex items-center gap-2">
                             {member.first_name} {member.last_name} - {member.role}
                             {member.status === 'on_leave' && (
                               <span className="text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">
                                 On Leave
+                              </span>
+                            )}
+                            {member.status === 'inactive' && (
+                              <span className="text-xs bg-gray-500/20 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
+                                Inactive
                               </span>
                             )}
                           </span>
