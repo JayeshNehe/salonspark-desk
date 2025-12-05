@@ -298,21 +298,32 @@ export default function Staff() {
                     <p className="text-sm text-muted-foreground">{member.role}</p>
                   </div>
                 </div>
-                <Select 
-                  value={member.status} 
-                  onValueChange={(value: 'active' | 'inactive' | 'on_leave') => 
-                    updateStaff.mutate({ id: member.id, data: { status: value } })
-                  }
-                >
-                  <SelectTrigger className="w-[110px] h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="on_leave">On Leave</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-col items-end gap-2">
+                  <Badge 
+                    className={`text-xs ${
+                      member.status === 'active' 
+                        ? 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30' 
+                        : 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30'
+                    }`}
+                  >
+                    {member.status === 'active' ? 'Active' : member.status === 'on_leave' ? 'On Leave' : 'Inactive'}
+                  </Badge>
+                  <Select 
+                    value={member.status} 
+                    onValueChange={(value: 'active' | 'inactive' | 'on_leave') => 
+                      updateStaff.mutate({ id: member.id, data: { status: value } })
+                    }
+                  >
+                    <SelectTrigger className="w-[100px] h-7 text-xs">
+                      <SelectValue placeholder="Change" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="on_leave">On Leave</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
