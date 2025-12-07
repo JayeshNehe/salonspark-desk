@@ -31,9 +31,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { UserPlus, Copy, Check, Trash2 } from "lucide-react";
-import { useUsersWithRoles, useCreateReceptionist, generatePassword, useDeleteUserRole } from "@/hooks/useUserManagement";
+import { UserPlus, Copy, Check, Trash2, AlertCircle, UserCheck } from "lucide-react";
+import { useUsersWithRoles, useCreateReceptionist, generatePassword, useDeleteUserRole, useSalonHasReceptionist } from "@/hooks/useUserManagement";
 import { format } from "date-fns";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function UserManagement() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -56,6 +57,7 @@ export default function UserManagement() {
   });
 
   const { data: users, isLoading } = useUsersWithRoles();
+  const { data: hasReceptionist, isLoading: isCheckingReceptionist } = useSalonHasReceptionist();
   const createReceptionist = useCreateReceptionist();
   const deleteUserRole = useDeleteUserRole();
 
@@ -112,6 +114,8 @@ export default function UserManagement() {
     }
   };
 
+  const receptionistUser = users?.find(u => u.role === 'receptionist');
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -121,18 +125,33 @@ export default function UserManagement() {
               User Management
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage receptionist accounts and user roles
+              Manage your salon's receptionist account
             </p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+          <Button 
+            onClick={() => setCreateDialogOpen(true)} 
+            className="gap-2"
+            disabled={hasReceptionist || isCheckingReceptionist}
+          >
             <UserPlus className="w-4 h-4" />
-            Create Receptionist
+            {hasReceptionist ? "Receptionist Exists" : "Create Receptionist"}
           </Button>
         </div>
 
+        {/* Info Alert */}
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>One Receptionist Per Salon</AlertTitle>
+          <AlertDescription>
+            Each salon can have only one receptionist account. The receptionist can access appointments, 
+            customers, and billing features. To create a new receptionist, you must first remove the existing one.
+          </AlertDescription>
+        </Alert>
+
+        {/* Users Table */}
         <Card>
           <CardHeader>
-            <CardTitle>All Users</CardTitle>
+            <CardTitle>Salon Users</CardTitle>
             <CardDescription>
               View and manage all user accounts in your salon
             </CardDescription>
@@ -144,7 +163,7 @@ export default function UserManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Email</TableHead>
+                    <TableHead>User</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Created At</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -152,11 +171,20 @@ export default function UserManagement() {
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.email}</TableCell>
+                    <TableRow key={user.role_id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            user.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-secondary/50 text-secondary-foreground'
+                          }`}>
+                            {user.role === 'admin' ? '👑' : <UserCheck className="w-4 h-4" />}
+                          </div>
+                          <span>{user.email}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                          {user.role}
+                          {user.role === 'admin' ? 'Admin / Owner' : 'Receptionist'}
                         </Badge>
                       </TableCell>
                       <TableCell>{format(new Date(user.created_at), 'PP')}</TableCell>
@@ -166,7 +194,7 @@ export default function UserManagement() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteRole(user.role_id)}
-                            className="text-destructive hover:text-destructive"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -184,13 +212,64 @@ export default function UserManagement() {
           </CardContent>
         </Card>
 
+        {/* Receptionist Status Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Receptionist Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isCheckingReceptionist ? (
+              <p className="text-muted-foreground">Checking...</p>
+            ) : receptionistUser ? (
+              <div className="flex items-center justify-between p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                    <UserCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Receptionist Active</p>
+                    <p className="text-sm text-muted-foreground">
+                      Created on {format(new Date(receptionistUser.created_at), 'PPP')}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDeleteRole(receptionistUser.role_id)}
+                  className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                >
+                  Remove Access
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-muted-foreground/20 rounded-full flex items-center justify-center">
+                    <UserPlus className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-medium">No Receptionist</p>
+                    <p className="text-sm text-muted-foreground">
+                      Create a receptionist account to help manage your salon
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={() => setCreateDialogOpen(true)} size="sm">
+                  Create Now
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Create Receptionist Dialog */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create Receptionist Account</DialogTitle>
               <DialogDescription>
-                Enter the details to create a new receptionist account
+                Enter the details to create a new receptionist account. They will use these credentials to login.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -225,7 +304,7 @@ export default function UserManagement() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="password">Temporary Password</Label>
+                <Label htmlFor="password">Password</Label>
                 <div className="flex gap-2">
                   <Input
                     id="password"
@@ -238,6 +317,9 @@ export default function UserManagement() {
                     Generate
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Share these credentials securely with your receptionist
+                </p>
               </div>
             </div>
             <DialogFooter>
@@ -255,9 +337,12 @@ export default function UserManagement() {
         <Dialog open={credentialsDialogOpen} onOpenChange={setCredentialsDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Receptionist Credentials Created</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-500" />
+                Receptionist Account Created
+              </DialogTitle>
               <DialogDescription>
-                Share these credentials with the receptionist. They won't be shown again.
+                Share these credentials securely with the receptionist. They won't be shown again.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -265,33 +350,36 @@ export default function UserManagement() {
                 <div>
                   <Label className="text-xs text-muted-foreground">Email</Label>
                   <div className="flex items-center justify-between mt-1">
-                    <code className="text-sm font-mono">{createdCredentials.email}</code>
+                    <code className="text-sm font-mono bg-background px-2 py-1 rounded">{createdCredentials.email}</code>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => handleCopy(createdCredentials.email, 'email')}
                     >
-                      {copiedEmail ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      {copiedEmail ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Password</Label>
                   <div className="flex items-center justify-between mt-1">
-                    <code className="text-sm font-mono">{createdCredentials.password}</code>
+                    <code className="text-sm font-mono bg-background px-2 py-1 rounded">{createdCredentials.password}</code>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => handleCopy(createdCredentials.password, 'password')}
                     >
-                      {copiedPassword ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      {copiedPassword ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Make sure to copy and share these credentials securely. The receptionist should change their password after first login.
-              </p>
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  The receptionist should login at <strong>/auth</strong> using these credentials and select "Receptionist" login type.
+                </AlertDescription>
+              </Alert>
             </div>
             <DialogFooter>
               <Button onClick={() => setCredentialsDialogOpen(false)}>
@@ -305,14 +393,17 @@ export default function UserManagement() {
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Remove User Access</AlertDialogTitle>
+              <AlertDialogTitle>Remove Receptionist Access</AlertDialogTitle>
               <AlertDialogDescription>
-                This will remove the user's access to this salon. This action cannot be undone.
+                This will remove the receptionist's access to this salon. They will no longer be able to login. 
+                You can create a new receptionist account after removing this one.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete}>Remove Access</AlertDialogAction>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Remove Access
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
