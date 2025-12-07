@@ -1,68 +1,24 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { authSchema } from '@/lib/validations';
+import { Scissors, ShieldCheck, UserCheck, ArrowLeft } from 'lucide-react';
+
+type LoginType = 'admin' | 'receptionist';
 
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [userType, setUserType] = useState<'admin' | 'receptionist'>('receptionist');
+  const [loginType, setLoginType] = useState<LoginType>('admin');
   const [loading, setLoading] = useState(false);
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn } = useAuth();
   const { toast } = useToast();
-
-  // Demo login function
-  const handleDemoLogin = async () => {
-    setLoading(true);
-    // Use demo credentials
-    const demoEmail = 'demo@salon.com';
-    const demoPassword = 'demo123';
-    
-    const { error } = await signIn(demoEmail, demoPassword);
-    
-    if (error) {
-      // If demo user doesn't exist, create it
-      const { error: signUpError } = await signUp(demoEmail, demoPassword, {
-        first_name: 'Demo',
-        last_name: 'User',
-      });
-      
-      if (!signUpError) {
-        // Try signing in again after signup
-        setTimeout(async () => {
-          const { error: secondSignInError } = await signIn(demoEmail, demoPassword);
-          if (!secondSignInError) {
-            toast({
-              title: "Success",
-              description: "Demo account created and logged in!",
-            });
-          }
-        }, 1000);
-      } else {
-        toast({
-          title: "Error",
-          description: signUpError.message || "Failed to create demo account",
-          variant: "destructive",
-        });
-      }
-    } else {
-      toast({
-        title: "Success",
-        description: "Logged in with demo account!",
-      });
-    }
-    
-    setLoading(false);
-  };
 
   // Redirect if already authenticated
   if (user) {
@@ -81,57 +37,20 @@ export default function Auth() {
       
       if (error) {
         toast({
-          title: "Error",
-          description: error.message || "Failed to sign in",
+          title: "Login Failed",
+          description: error.message || "Invalid email or password",
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Success",
-          description: "Signed in successfully!",
+          title: "Welcome Back!",
+          description: `Signed in successfully as ${loginType}`,
         });
       }
     } catch (error: any) {
       toast({
         title: "Validation Error",
-        description: error.errors?.[0]?.message || "Invalid email or password format",
-        variant: "destructive",
-      });
-    }
-    
-    setLoading(false);
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      // Validate input
-      authSchema.parse({ email, password });
-      
-      const { error } = await signUp(email, password, {
-        first_name: firstName,
-        last_name: lastName,
-        user_type: userType,
-      });
-      
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to sign up",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Account created successfully! Please check your email to verify your account.",
-        });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Validation Error",
-        description: error.errors?.[0]?.message || "Invalid input. Password must be at least 8 characters with uppercase, lowercase, number, and special character.",
+        description: error.errors?.[0]?.message || "Please enter a valid email and password",
         variant: "destructive",
       });
     }
@@ -141,164 +60,118 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
-      <Card className="w-full max-w-md card-premium">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center bg-gradient-primary bg-clip-text text-transparent">
-            Salon Management
-          </CardTitle>
-          <CardDescription className="text-center">
-            Sign in to access your salon dashboard
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* User Type Selection */}
-          <div className="space-y-4 mb-6">
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-primary rounded-full opacity-10 blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-secondary rounded-full opacity-10 blur-3xl" />
+      
+      <div className="relative z-10 w-full max-w-md">
+        {/* Back to Home */}
+        <Link 
+          to="/" 
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Link>
+
+        <Card className="card-premium">
+          <CardHeader className="text-center pb-2">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-full flex items-center justify-center shadow-lg">
+              <Scissors className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <CardTitle className="text-2xl bg-gradient-primary bg-clip-text text-transparent">
+              Salon Login
+            </CardTitle>
+            <CardDescription>
+              Sign in to access your salon dashboard
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            {/* Login Type Selection */}
             <div className="grid grid-cols-2 gap-3">
               <Button
-                onClick={() => setUserType('admin')}
-                variant={userType === 'admin' ? 'default' : 'outline'}
+                type="button"
+                onClick={() => setLoginType('admin')}
+                variant={loginType === 'admin' ? 'default' : 'outline'}
                 className={cn(
-                  "transition-smooth",
-                  userType === 'admin' && "bg-gradient-primary text-primary-foreground shadow-primary"
+                  "h-auto py-4 flex flex-col gap-2 transition-all",
+                  loginType === 'admin' && "bg-gradient-primary text-primary-foreground shadow-lg scale-[1.02]"
                 )}
               >
-                Admin Login
+                <ShieldCheck className="w-6 h-6" />
+                <span className="font-semibold">Admin / Owner</span>
               </Button>
               <Button
-                onClick={() => setUserType('receptionist')}
-                variant={userType === 'receptionist' ? 'default' : 'outline'}
+                type="button"
+                onClick={() => setLoginType('receptionist')}
+                variant={loginType === 'receptionist' ? 'default' : 'outline'}
                 className={cn(
-                  "transition-smooth",
-                  userType === 'receptionist' && "bg-gradient-primary text-primary-foreground shadow-primary"
+                  "h-auto py-4 flex flex-col gap-2 transition-all",
+                  loginType === 'receptionist' && "bg-gradient-primary text-primary-foreground shadow-lg scale-[1.02]"
                 )}
               >
-                Receptionist Login
+                <UserCheck className="w-6 h-6" />
+                <span className="font-semibold">Receptionist</span>
               </Button>
             </div>
-          </div>
-          
-          {/* Demo Login Button */}
-          <div className="space-y-4 mb-6">
-            <Button 
-              onClick={handleDemoLogin}
-              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold"
-              disabled={loading}
-              size="lg"
-            >
-              {loading ? "Logging in..." : "🚀 Quick Demo Login"}
-            </Button>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border/50" />
+
+            {/* Login Form */}
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-11"
+                />
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or</span>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="h-11"
+                />
               </div>
+              <Button 
+                type="submit" 
+                className="w-full h-11 bg-gradient-primary hover:opacity-90 text-primary-foreground font-semibold"
+                disabled={loading}
+              >
+                {loading ? "Signing In..." : "Sign In"}
+              </Button>
+            </form>
+
+            {/* Info Text */}
+            <div className="text-center space-y-2 pt-2">
+              <p className="text-sm text-muted-foreground">
+                {loginType === 'admin' 
+                  ? "Login with your admin credentials to manage your salon"
+                  : "Login with the credentials provided by your salon admin"
+                }
+              </p>
+              
+              {loginType === 'admin' && (
+                <p className="text-sm">
+                  Don't have a salon account?{' '}
+                  <Link to="/salon-registration" className="text-primary hover:underline font-medium">
+                    Register your salon
+                  </Link>
+                </p>
+              )}
             </div>
-          </div>
-          
-          <Tabs defaultValue="signin" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90"
-                  disabled={loading}
-                >
-                  {loading ? "Signing In..." : "Sign In"}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="first-name">First Name</Label>
-                    <Input
-                      id="first-name"
-                      placeholder="First name"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="last-name">Last Name</Label>
-                    <Input
-                      id="last-name"
-                      placeholder="Last name"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={8}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Password must be at least 8 characters with uppercase, lowercase, number, and special character
-                  </p>
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90"
-                  disabled={loading}
-                >
-                  {loading ? "Creating Account..." : "Sign Up"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

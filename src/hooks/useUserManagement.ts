@@ -64,6 +64,29 @@ export function useUsersWithRoles() {
   });
 }
 
+// Check if salon already has a receptionist
+export function useSalonHasReceptionist() {
+  const { data: salonId } = useUserSalonId();
+
+  return useQuery({
+    queryKey: ['salon-has-receptionist', salonId],
+    queryFn: async (): Promise<boolean> => {
+      if (!salonId) return false;
+
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('salon_id', salonId)
+        .eq('role', 'receptionist')
+        .limit(1);
+
+      if (error) throw error;
+      return (data?.length ?? 0) > 0;
+    },
+    enabled: !!salonId,
+  });
+}
+
 // Create receptionist account
 export function useCreateReceptionist() {
   const queryClient = useQueryClient();
@@ -109,6 +132,7 @@ export function useCreateReceptionist() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['salon-has-receptionist'] });
       toast({
         title: "Success",
         description: "Receptionist account created successfully",
@@ -140,6 +164,7 @@ export function useDeleteUserRole() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['salon-has-receptionist'] });
       toast({
         title: "Success",
         description: "User role removed successfully",
