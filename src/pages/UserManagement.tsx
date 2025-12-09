@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -114,8 +113,8 @@ export default function UserManagement() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -126,7 +125,7 @@ export default function UserManagement() {
               Manage admin and receptionist accounts
             </p>
           </div>
-          <Button 
+          <Button
             onClick={() => setCreateDialogOpen(true)} 
             className="gap-2"
             disabled={hasReceptionist || isCheckingReceptionist}
@@ -342,8 +341,8 @@ export default function UserManagement() {
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
-        </AlertDialog>
+      </AlertDialog>
       </div>
-    </Layout>
+    </div>
   );
 }
