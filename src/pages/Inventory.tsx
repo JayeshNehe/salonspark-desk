@@ -1,16 +1,36 @@
 import { useState } from 'react';
-import { useProducts, useLowStockProducts, useCreateProduct } from '@/hooks/useProducts';
+import { useProducts, useLowStockProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Package, AlertTriangle, IndianRupee } from 'lucide-react';
+import { Plus, Package, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
-import { useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
+
+interface ProductFormData {
+  name: string;
+  category: string;
+  sku: string;
+  supplier: string;
+  cost_price: number;
+  selling_price: number;
+  stock_quantity: number;
+  min_stock_level: number;
+}
+
+const initialFormData: ProductFormData = {
+  name: '',
+  category: '',
+  sku: '',
+  supplier: '',
+  cost_price: 0,
+  selling_price: 0,
+  stock_quantity: 0,
+  min_stock_level: 10
+};
 
 export default function Inventory() {
   const { data: products, isLoading } = useProducts();
@@ -20,51 +40,31 @@ export default function Inventory() {
   const deleteProduct = useDeleteProduct();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [newProduct, setNewProduct] = useState({
-    name: '',
-    description: '',
-    brand: '',
-    category: '',
-    supplier: '',
-    supplier_mobile: '',
-    cost_price: 0,
-    selling_price: 0,
-    stock_quantity: 0,
-    min_stock_level: 10
-  });
+  const [formData, setFormData] = useState<ProductFormData>(initialFormData);
 
-  const handleCreateProduct = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingProduct) {
-      await updateProduct.mutateAsync({ id: editingProduct.id, ...newProduct });
+      await updateProduct.mutateAsync({ id: editingProduct.id, ...formData });
     } else {
-      await createProduct.mutateAsync(newProduct);
+      await createProduct.mutateAsync(formData);
     }
-    setNewProduct({
-      name: '',
-      description: '',
-      brand: '',
-      category: '',
-      supplier: '',
-      supplier_mobile: '',
-      cost_price: 0,
-      selling_price: 0,
-      stock_quantity: 0,
-      min_stock_level: 10
-    });
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormData);
     setEditingProduct(null);
     setIsDialogOpen(false);
   };
 
   const handleEditProduct = (product: any) => {
     setEditingProduct(product);
-    setNewProduct({
+    setFormData({
       name: product.name,
-      description: product.description || '',
-      brand: product.brand || '',
       category: product.category || '',
+      sku: product.sku || '',
       supplier: product.supplier || '',
-      supplier_mobile: product.supplier_mobile || '',
       cost_price: product.cost_price,
       selling_price: product.selling_price,
       stock_quantity: product.stock_quantity,
@@ -121,7 +121,10 @@ export default function Inventory() {
           </p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
@@ -132,81 +135,61 @@ export default function Inventory() {
             <DialogHeader>
               <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleCreateProduct} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Product Name</Label>
+                  <Label htmlFor="name">Product Name *</Label>
                   <Input
                     id="name"
-                    value={newProduct.name}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g., Hair Oil, Face Cream"
                     required
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="brand">Brand</Label>
+                  <Label htmlFor="category">Category *</Label>
                   <Input
-                    id="brand"
-                    value={newProduct.brand}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, brand: e.target.value }))}
-                    placeholder="Brand name"
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                    placeholder="Hair Care, Skin Care, etc."
+                    required
                   />
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={newProduct.category}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, category: e.target.value }))}
-                  placeholder="Hair Care, Skin Care, etc."
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newProduct.description}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Product description..."
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="supplier">Supplier</Label>
+                  <Label htmlFor="sku">SKU (Optional)</Label>
+                  <Input
+                    id="sku"
+                    value={formData.sku}
+                    onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
+                    placeholder="Product SKU/Barcode"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="supplier">Supplier (Optional)</Label>
                   <Input
                     id="supplier"
-                    value={newProduct.supplier}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, supplier: e.target.value }))}
+                    value={formData.supplier}
+                    onChange={(e) => setFormData(prev => ({ ...prev, supplier: e.target.value }))}
                     placeholder="Supplier name"
                   />
                 </div>
-                
-                <div>
-                  <Label htmlFor="supplier_mobile">Supplier Mobile</Label>
-                  <Input
-                    id="supplier_mobile"
-                    value={newProduct.supplier_mobile}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, supplier_mobile: e.target.value }))}
-                    placeholder="Supplier mobile number"
-                    type="tel"
-                  />
-                </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="cost_price">Cost Price (₹)</Label>
+                  <Label htmlFor="cost_price">Cost Price (₹) *</Label>
                   <Input
                     id="cost_price"
                     type="number"
-                    value={newProduct.cost_price}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, cost_price: parseFloat(e.target.value) }))}
+                    value={formData.cost_price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cost_price: parseFloat(e.target.value) || 0 }))}
                     min="0"
                     step="0.01"
                     required
@@ -214,12 +197,12 @@ export default function Inventory() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="selling_price">Selling Price (₹)</Label>
+                  <Label htmlFor="selling_price">Selling Price (₹) *</Label>
                   <Input
                     id="selling_price"
                     type="number"
-                    value={newProduct.selling_price}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, selling_price: parseFloat(e.target.value) }))}
+                    value={formData.selling_price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, selling_price: parseFloat(e.target.value) || 0 }))}
                     min="0"
                     step="0.01"
                     required
@@ -229,24 +212,24 @@ export default function Inventory() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="stock_quantity">Stock Quantity</Label>
+                  <Label htmlFor="stock_quantity">Stock Quantity *</Label>
                   <Input
                     id="stock_quantity"
                     type="number"
-                    value={newProduct.stock_quantity}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, stock_quantity: parseInt(e.target.value) }))}
+                    value={formData.stock_quantity}
+                    onChange={(e) => setFormData(prev => ({ ...prev, stock_quantity: parseInt(e.target.value) || 0 }))}
                     min="0"
                     required
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="min_stock_level">Minimum Stock Level</Label>
+                  <Label htmlFor="min_stock_level">Minimum Stock Level *</Label>
                   <Input
                     id="min_stock_level"
                     type="number"
-                    value={newProduct.min_stock_level}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, min_stock_level: parseInt(e.target.value) }))}
+                    value={formData.min_stock_level}
+                    onChange={(e) => setFormData(prev => ({ ...prev, min_stock_level: parseInt(e.target.value) || 1 }))}
                     min="1"
                     required
                   />
@@ -260,22 +243,7 @@ export default function Inventory() {
                     : (createProduct.isPending ? 'Creating...' : 'Create Product')
                   }
                 </Button>
-                <Button type="button" variant="outline" onClick={() => {
-                  setIsDialogOpen(false);
-                  setEditingProduct(null);
-                  setNewProduct({
-                    name: '',
-                    description: '',
-                    brand: '',
-                    category: '',
-                    supplier: '',
-                    supplier_mobile: '',
-                    cost_price: 0,
-                    selling_price: 0,
-                    stock_quantity: 0,
-                    min_stock_level: 10
-                  });
-                }}>
+                <Button type="button" variant="outline" onClick={resetForm}>
                   Cancel
                 </Button>
               </div>
@@ -331,9 +299,14 @@ export default function Inventory() {
                         <span>Price:</span>
                         <span className="text-primary">{formatCurrency(product.selling_price)}</span>
                       </div>
-                      {product.category && (
+                      {product.sku && (
                         <p className="text-xs text-muted-foreground">
-                          Category: {product.category}
+                          SKU: {product.sku}
+                        </p>
+                      )}
+                      {product.supplier && (
+                        <p className="text-xs text-muted-foreground">
+                          Supplier: {product.supplier}
                         </p>
                       )}
                       <div className="flex gap-2 mt-3">

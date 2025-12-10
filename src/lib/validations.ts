@@ -97,23 +97,20 @@ export const serviceSchema = z.object({
   status: z.enum(['active', 'inactive']).optional()
 });
 
-// Product validation
+// Product validation - matches database schema
 export const productSchema = z.object({
   name: z.string()
     .trim()
     .min(1, { message: "Product name is required" })
     .max(200, { message: "Product name must be less than 200 characters" }),
-  description: z.string()
-    .max(1000, { message: "Description must be less than 1000 characters" })
-    .optional(),
-  brand: z.string()
-    .max(100, { message: "Brand must be less than 100 characters" })
-    .optional(),
   category: z.string()
-    .max(100, { message: "Category must be less than 100 characters" })
+    .min(1, { message: "Category is required" })
+    .max(100, { message: "Category must be less than 100 characters" }),
+  sku: z.string()
+    .max(50, { message: "SKU must be less than 50 characters" })
     .optional(),
-  barcode: z.string()
-    .max(50, { message: "Barcode must be less than 50 characters" })
+  supplier: z.string()
+    .max(200, { message: "Supplier must be less than 200 characters" })
     .optional(),
   cost_price: z.number()
     .min(0, { message: "Cost price must be positive" })
@@ -128,13 +125,7 @@ export const productSchema = z.object({
     .int({ message: "Minimum stock level must be a whole number" })
     .min(0, { message: "Minimum stock level must be positive" })
     .optional(),
-  supplier: z.string()
-    .max(200, { message: "Supplier must be less than 200 characters" })
-    .optional(),
-  supplier_mobile: z.string()
-    .max(15, { message: "Supplier mobile must be less than 15 digits" })
-    .regex(/^[0-9+\-\s()]*$/, { message: "Invalid phone number format" })
-    .optional()
+  status: z.enum(['active', 'inactive']).optional()
 });
 
 // Appointment validation
