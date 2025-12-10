@@ -39,14 +39,16 @@ export function useLowStockProducts() {
   return useQuery({
     queryKey: ['low-stock-products'],
     queryFn: async (): Promise<Product[]> => {
+      // Fetch all products and filter client-side since we need to compare two columns
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .filter('stock_quantity', 'lt', 'min_stock_level')
         .order('stock_quantity', { ascending: true });
       
       if (error) throw error;
-      return data || [];
+      
+      // Filter products where stock_quantity is less than min_stock_level
+      return (data || []).filter(product => product.stock_quantity < product.min_stock_level);
     },
   });
 }
