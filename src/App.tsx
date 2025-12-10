@@ -47,7 +47,7 @@ const App = () => (
               
               {/* Admin-only routes */}
               <Route path="/services" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Services /></Layout></RoleProtectedRoute></ProtectedRoute>} />
-              <Route path="/inventory" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Inventory /></Layout></RoleProtectedRoute></ProtectedRoute>} />
+              <Route path="/inventory" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin', 'receptionist']}><Layout><Inventory /></Layout></RoleProtectedRoute></ProtectedRoute>} />
               <Route path="/staff" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Staff /></Layout></RoleProtectedRoute></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><Reports /></Layout></RoleProtectedRoute></ProtectedRoute>} />
               <Route path="/user-management" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin']}><Layout><UserManagement /></Layout></RoleProtectedRoute></ProtectedRoute>} />
