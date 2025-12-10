@@ -33,6 +33,7 @@ const receptionistNavigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Appointments", href: "/appointments", icon: Calendar },
   { name: "Customers", href: "/customers", icon: Users },
+  { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Billing", href: "/billing", icon: CreditCard },
 ];
 
