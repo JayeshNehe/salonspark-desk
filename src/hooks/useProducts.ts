@@ -1,12 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/lib/currency';
 import { useUserSalonId } from './useUserRoles';
-import { productSchema } from '@/lib/validations';
 
 interface Product {
   id: string;
+  name: string;
+  category: string;
+  sku?: string | null;
+  supplier?: string | null;
+  cost_price: number;
+  selling_price: number;
+  stock_quantity: number;
+  min_stock_level: number;
+  status?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CreateProductInput {
   name: string;
   category: string;
   sku?: string;
@@ -14,10 +26,7 @@ interface Product {
   cost_price: number;
   selling_price: number;
   stock_quantity: number;
-  min_stock_level: number;
-  status?: string;
-  created_at: string;
-  updated_at: string;
+  min_stock_level?: number;
 }
 
 export function useProducts() {
@@ -59,15 +68,22 @@ export function useCreateProduct() {
   const { data: salonId } = useUserSalonId();
 
   return useMutation({
-    mutationFn: async (product: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
-      // Validate input
-      productSchema.parse(product);
-      
+    mutationFn: async (product: CreateProductInput) => {
       if (!salonId) throw new Error('Salon not found');
       
       const { data, error } = await supabase
         .from('products')
-        .insert([{ ...product, salon_id: salonId }])
+        .insert([{ 
+          name: product.name,
+          category: product.category,
+          sku: product.sku || null,
+          supplier: product.supplier || null,
+          cost_price: product.cost_price,
+          selling_price: product.selling_price,
+          stock_quantity: product.stock_quantity,
+          min_stock_level: product.min_stock_level || 10,
+          salon_id: salonId 
+        }])
         .select()
         .single();
       
