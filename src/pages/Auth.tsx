@@ -9,6 +9,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { authSchema } from '@/lib/validations';
 import { Scissors, ShieldCheck, UserCheck, ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 type LoginType = 'admin' | 'receptionist';
 
@@ -17,7 +18,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [loginType, setLoginType] = useState<LoginType>('admin');
   const [loading, setLoading] = useState(false);
-  const { user, signIn } = useAuth();
+  const { user, signIn, signOut } = useAuth();
   const { toast } = useToast();
 
   // Redirect if already authenticated
@@ -41,12 +42,78 @@ export default function Auth() {
           description: error.message || "Invalid email or password",
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Welcome Back!",
-          description: `Signed in successfully as ${loginType}`,
-        });
+        setLoading(false);
+        return;
       }
+
+      // Get the current user after successful sign in
+      const { data: { user: signedInUser } } = await supabase.auth.getUser();
+      
+      if (!signedInUser) {
+        toast({
+          title: "Login Failed",
+          description: "Unable to verify user",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Check user's role
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', signedInUser.id);
+
+      if (rolesError) {
+        console.error('Error fetching roles:', rolesError);
+        await signOut();
+        toast({
+          title: "Login Failed",
+          description: "Unable to verify user role",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Check if user is a salon owner (admin) by checking salon_profiles
+      const { data: salonProfile } = await supabase
+        .from('salon_profiles')
+        .select('id')
+        .eq('user_id', signedInUser.id)
+        .maybeSingle();
+
+      const isAdmin = salonProfile !== null || userRoles?.some(r => r.role === 'admin');
+      const isReceptionist = userRoles?.some(r => r.role === 'receptionist');
+
+      // Validate login type matches user role
+      if (loginType === 'admin' && !isAdmin) {
+        await signOut();
+        toast({
+          title: "Access Denied",
+          description: "This login is for Admin/Owner only. Please use Receptionist login.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (loginType === 'receptionist' && !isReceptionist) {
+        await signOut();
+        toast({
+          title: "Access Denied",
+          description: "This login is for Receptionist only. Please use Admin/Owner login.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        title: "Welcome Back!",
+        description: `Signed in successfully as ${loginType}`,
+      });
     } catch (error: any) {
       toast({
         title: "Validation Error",
