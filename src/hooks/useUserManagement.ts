@@ -44,15 +44,15 @@ export function useUsersWithRoles() {
 
       const { data: userRoles, error } = await supabase
         .from('user_roles')
-        .select('id, user_id, role, created_at')
+        .select('id, user_id, role, created_at, email')
         .eq('salon_id', salonId);
 
       if (error) throw error;
 
-      // Map to include user_id as identifier (we'll show partial email or user_id)
+      // Map to include email from the stored column
       const usersWithRoles: UserWithRole[] = (userRoles || []).map(userRole => ({
         id: userRole.user_id,
-        email: userRole.user_id === currentUser.id ? currentUser.email || 'Unknown' : `User ${userRole.user_id.substring(0, 8)}...`,
+        email: userRole.email || (userRole.user_id === currentUser.id ? currentUser.email || 'Unknown' : `User ${userRole.user_id.substring(0, 8)}...`),
         created_at: userRole.created_at,
         role: userRole.role,
         role_id: userRole.id,
@@ -113,13 +113,14 @@ export function useCreateReceptionist() {
       if (authError) throw authError;
       if (!authData.user) throw new Error('Failed to create user');
 
-      // Assign receptionist role
+      // Assign receptionist role with email
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert([{
           user_id: authData.user.id,
           salon_id: salonId,
           role: 'receptionist',
+          email: email,
         }]);
 
       if (roleError) throw roleError;
