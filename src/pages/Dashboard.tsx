@@ -2,6 +2,7 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Calendar, 
   Clock,
@@ -13,11 +14,13 @@ import {
 } from "lucide-react";
 import { useDashboardStats } from '@/hooks/useReports';
 import { useLowStockProducts } from '@/hooks/useProducts';
+import { useTodaysAppointments } from '@/hooks/useAppointments';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const { data: dashboardStats, isLoading: isStatsLoading } = useDashboardStats();
   const { data: lowStockProducts } = useLowStockProducts();
+  const { data: todayAppointments, isLoading: isAppointmentsLoading } = useTodaysAppointments();
 
   const stats = [
     {
@@ -40,17 +43,30 @@ export default function Dashboard() {
     },
   ];
 
-  const todayAppointments = [
-    // Empty array for new salons - will be populated with real data
-  ];
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed": return "bg-success/10 text-success border-success/20";
-      case "in-progress": return "bg-primary/10 text-primary border-primary/20";
-      case "pending": return "bg-warning/10 text-warning border-warning/20";
+      case "in_progress": return "bg-primary/10 text-primary border-primary/20";
+      case "scheduled": return "bg-warning/10 text-warning border-warning/20";
+      case "completed": return "bg-success/10 text-success border-success/20";
+      case "cancelled": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "bg-muted/10 text-muted-foreground border-muted/20";
     }
+  };
+
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  const calculateDuration = (startTime: string, endTime: string) => {
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
+    const totalMinutes = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
+    return `${totalMinutes} min`;
   };
 
   return (
@@ -99,26 +115,43 @@ export default function Dashboard() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {todayAppointments.length > 0 ? (
+            {isAppointmentsLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <Skeleton className="h-10 w-16" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-48" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                ))}
+              </div>
+            ) : todayAppointments && todayAppointments.length > 0 ? (
               todayAppointments.map((appointment) => (
                 <div
                   key={appointment.id}
                   className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50 hover:shadow-soft transition-smooth"
                 >
                   <div className="flex items-center space-x-4">
-                    <div className="text-center">
-                      <div className="text-sm font-semibold">{appointment.time}</div>
-                      <div className="text-xs text-muted-foreground">{appointment.duration}</div>
+                    <div className="text-center min-w-[70px]">
+                      <div className="text-sm font-semibold">{formatTime(appointment.start_time)}</div>
+                      <div className="text-xs text-muted-foreground">{calculateDuration(appointment.start_time, appointment.end_time)}</div>
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium">{appointment.customer}</div>
+                      <div className="font-medium">
+                        {appointment.customers?.first_name} {appointment.customers?.last_name}
+                      </div>
                       <div className="text-sm text-muted-foreground">
-                        {appointment.service} • {appointment.staff}
+                        {appointment.services?.name || 'No service'} • {appointment.staff ? `${appointment.staff.first_name} ${appointment.staff.last_name}` : 'No staff assigned'}
                       </div>
                     </div>
                   </div>
-                  <Badge className={getStatusColor(appointment.status)}>
-                    {appointment.status.replace("-", " ")}
+                  <Badge className={getStatusColor(appointment.status || 'scheduled')}>
+                    {(appointment.status || 'scheduled').replace("_", " ")}
                   </Badge>
                 </div>
               ))

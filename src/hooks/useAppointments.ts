@@ -63,6 +63,40 @@ export function useAppointments() {
   });
 }
 
+export function useTodaysAppointments() {
+  return useQuery({
+    queryKey: ['appointments', 'today'],
+    queryFn: async (): Promise<Appointment[]> => {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          customers (
+            first_name,
+            last_name,
+            phone
+          ),
+          services (
+            name,
+            price,
+            duration_minutes
+          ),
+          staff (
+            first_name,
+            last_name
+          )
+        `)
+        .eq('appointment_date', today)
+        .order('start_time', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
 export function useCreateAppointment() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
