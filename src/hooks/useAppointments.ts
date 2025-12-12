@@ -186,66 +186,57 @@ export function useUpdateAppointment() {
 export function useCheckInAppointment() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data: salonId } = useUserSalonId();
 
   return useMutation({
     mutationFn: async (appointmentId: string) => {
-      if (!salonId) throw new Error('Salon not found');
-      
-      // Get appointment details
-      const { data: appointment, error: appointmentError } = await supabase
+      const { error } = await supabase
         .from('appointments')
-        .select('*')
-        .eq('id', appointmentId)
-        .single();
-
-      if (appointmentError) throw appointmentError;
-
-      // Get service duration for scheduling auto-complete
-      const { data: service } = await supabase
-        .from('services')
-        .select('duration_minutes')
-        .eq('id', appointment.service_id)
-        .single();
-
-      const durationMinutes = service?.duration_minutes || 30;
-
-      // Update appointment status to in_progress
-      const { error: updateError } = await supabase
-        .from('appointments')
-        .update({ 
-          status: 'in_progress'
-        })
+        .update({ status: 'in_progress' })
         .eq('id', appointmentId);
 
-      if (updateError) throw updateError;
-
-      // Schedule automatic status update to completed
-      setTimeout(async () => {
-        await supabase
-          .from('appointments')
-          .update({ status: 'completed' })
-          .eq('id', appointmentId)
-          .eq('status', 'in_progress'); // Only update if still in progress
-        
-        queryClient.invalidateQueries({ queryKey: ['appointments'] });
-        queryClient.invalidateQueries({ queryKey: ['pending-billings'] });
-      }, durationMinutes * 60 * 1000);
-
-      return { appointment };
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      queryClient.invalidateQueries({ queryKey: ['sales'] }); 
       toast({
         title: "Success",
-        description: "Customer checked in and billing created successfully",
+        description: "Appointment checked in - now in progress",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to check in appointment",
+        description: error.message || "Failed to check in",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useCompleteAppointment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (appointmentId: string) => {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: 'completed' })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      toast({
+        title: "Success",
+        description: "Appointment marked as completed",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to complete appointment",
         variant: "destructive",
       });
     },
