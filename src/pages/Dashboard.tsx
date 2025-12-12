@@ -11,16 +11,21 @@ import {
   Package,
   Users,
   IndianRupee,
+  PlayCircle,
+  CheckCircle,
+  CalendarClock,
 } from "lucide-react";
 import { useDashboardStats } from '@/hooks/useReports';
 import { useLowStockProducts } from '@/hooks/useProducts';
-import { useTodaysAppointments } from '@/hooks/useAppointments';
+import { useTodaysAppointments, useCheckInAppointment, useCompleteAppointment } from '@/hooks/useAppointments';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const { data: dashboardStats, isLoading: isStatsLoading } = useDashboardStats();
   const { data: lowStockProducts } = useLowStockProducts();
   const { data: todayAppointments, isLoading: isAppointmentsLoading } = useTodaysAppointments();
+  const checkInMutation = useCheckInAppointment();
+  const completeMutation = useCompleteAppointment();
 
   const stats = [
     {
@@ -131,7 +136,12 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : todayAppointments && todayAppointments.length > 0 ? (
-              todayAppointments.map((appointment) => (
+              [...todayAppointments]
+                .sort((a, b) => {
+                  const statusOrder: Record<string, number> = { 'in_progress': 0, 'scheduled': 1, 'confirmed': 2, 'completed': 3 };
+                  return (statusOrder[a.status || 'scheduled'] || 4) - (statusOrder[b.status || 'scheduled'] || 4);
+                })
+                .map((appointment) => (
                 <div
                   key={appointment.id}
                   className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50 hover:shadow-soft transition-smooth"
@@ -150,9 +160,46 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                  <Badge className={getStatusColor(appointment.status || 'scheduled')}>
-                    {(appointment.status || 'scheduled').replace("_", " ")}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {(appointment.status === 'scheduled' || appointment.status === 'confirmed') && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-primary border-primary/30 hover:bg-primary/10"
+                        onClick={() => checkInMutation.mutate(appointment.id)}
+                        disabled={checkInMutation.isPending}
+                      >
+                        <PlayCircle className="w-4 h-4 mr-1" />
+                        Check In
+                      </Button>
+                    )}
+                    {appointment.status === 'in_progress' && (
+                      <Button
+                        size="sm"
+                        className="bg-success hover:bg-success/90 text-success-foreground"
+                        onClick={() => completeMutation.mutate(appointment.id)}
+                        disabled={completeMutation.isPending}
+                      >
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Complete
+                      </Button>
+                    )}
+                    {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-foreground"
+                        asChild
+                      >
+                        <Link to={`/appointments?reschedule=${appointment.id}`}>
+                          <CalendarClock className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                    )}
+                    <Badge className={getStatusColor(appointment.status || 'scheduled')}>
+                      {(appointment.status || 'scheduled').replace("_", " ")}
+                    </Badge>
+                  </div>
                 </div>
               ))
             ) : (
