@@ -116,7 +116,7 @@ export function useHeldTransactions() {
           )
         `)
         .eq('salon_id', salonId)
-        .eq('payment_status', 'on_hold')
+        .eq('payment_status', 'pending')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -139,6 +139,44 @@ export function useHeldTransactions() {
       }));
     },
     enabled: !!salonId,
+  });
+}
+
+// Delete a held transaction (for resume functionality)
+export function useDeleteHeldTransaction() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (saleId: string) => {
+      // First delete sale items
+      const { error: itemsError } = await supabase
+        .from('sale_items')
+        .delete()
+        .eq('sale_id', saleId);
+
+      if (itemsError) throw itemsError;
+
+      // Then delete the sale
+      const { error: saleError } = await supabase
+        .from('sales')
+        .delete()
+        .eq('id', saleId);
+
+      if (saleError) throw saleError;
+
+      return saleId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['held-transactions'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete held transaction",
+        variant: "destructive",
+      });
+    },
   });
 }
 

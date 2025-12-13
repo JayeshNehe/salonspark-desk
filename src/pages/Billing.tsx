@@ -28,7 +28,7 @@ import { formatCurrency } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { CustomerSearchCombobox } from '@/components/appointments/CustomerSearchCombobox';
 import { useUserSalonId } from '@/hooks/useUserRoles';
-import { usePendingBillings, useHeldTransactions, useHoldTransaction, useCompleteHeldTransaction } from '@/hooks/useBilling';
+import { usePendingBillings, useHeldTransactions, useHoldTransaction, useCompleteHeldTransaction, useDeleteHeldTransaction } from '@/hooks/useBilling';
 
 interface CartItem {
   id: string;
@@ -60,6 +60,7 @@ export default function Billing() {
   
   const holdTransaction = useHoldTransaction();
   const completeHeldTransaction = useCompleteHeldTransaction();
+  const deleteHeldTransaction = useDeleteHeldTransaction();
 
   // Load appointment service when customer is selected from pending billings
   useEffect(() => {
@@ -243,27 +244,25 @@ export default function Billing() {
     setActiveTab('held');
   };
 
-  const handleResumeTransaction = (transaction: any) => {
-    setSelectedCustomer(transaction.customer_id);
+  const handleResumeTransaction = async (transaction: any) => {
+    // Delete the held transaction from database
+    await deleteHeldTransaction.mutateAsync(transaction.id);
+    
+    // Load into cart
+    setSelectedCustomer(transaction.customer_id || '');
     setCart(transaction.items);
-    setDiscountAmount(transaction.discount_amount);
-    setPaymentMethod(transaction.payment_method);
+    setDiscountAmount(transaction.discount_amount || 0);
+    setPaymentMethod(transaction.payment_method || 'cash');
     setActiveTab('billing');
   };
 
-  const handleCompleteHeldTransaction = async (saleId: string) => {
+  const handleCompleteHeldTransaction = async (transaction: any) => {
     await completeHeldTransaction.mutateAsync({
-      saleId,
-      paymentMethod,
-      discountAmount,
-      appointmentId: selectedAppointmentId || undefined
+      saleId: transaction.id,
+      paymentMethod: transaction.payment_method || 'cash',
+      discountAmount: transaction.discount_amount || 0,
+      appointmentId: undefined
     });
-
-    // Reset form
-    setCart([]);
-    setSelectedCustomer('');
-    setSelectedAppointmentId('');
-    setDiscountAmount(0);
   };
 
   const filteredServices = services?.filter(service => 
@@ -670,7 +669,7 @@ export default function Billing() {
                         size="sm" 
                         variant="outline"
                         className="flex-1 gap-2"
-                        onClick={() => handleCompleteHeldTransaction(transaction.id)}
+                        onClick={() => handleCompleteHeldTransaction(transaction)}
                       >
                         <CreditCard className="h-4 w-4" />
                         Complete Payment
