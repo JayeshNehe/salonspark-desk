@@ -128,13 +128,13 @@ const SalonRegistration = () => {
           Back to home
         </Link>
 
-        <Card className="glass border-white/20 shadow-strong">
+        <Card className="bg-card/95 backdrop-blur-sm border-border/50 shadow-strong">
           <CardHeader className="text-center space-y-2">
             <div className="w-16 h-16 mx-auto bg-gradient-primary rounded-full flex items-center justify-center mb-4">
-              <Building2 className="w-8 h-8 text-white" />
+              <Building2 className="w-8 h-8 text-primary-foreground" />
             </div>
-            <CardTitle className="text-2xl font-bold text-white">Register Your Salon</CardTitle>
-            <CardDescription className="text-white/70">
+            <CardTitle className="text-2xl font-bold text-card-foreground">Register Your Salon</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Join SalonPro and transform your business
             </CardDescription>
           </CardHeader>
@@ -143,13 +143,13 @@ const SalonRegistration = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Salon Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white flex items-center">
-                  <Building2 className="w-5 h-5 mr-2 text-yellow-300" />
+                <h3 className="text-lg font-semibold text-card-foreground flex items-center">
+                  <Building2 className="w-5 h-5 mr-2 text-primary" />
                   Salon Information
                 </h3>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="salonName" className="text-white/90">Salon Name</Label>
+                  <Label htmlFor="salonName" className="text-card-foreground">Salon Name</Label>
                   <Input
                     id="salonName"
                     name="salonName"
@@ -157,15 +157,15 @@ const SalonRegistration = () => {
                     required
                     value={formData.salonName}
                     onChange={handleInputChange}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground"
                     placeholder="Enter your salon name"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="ownerName" className="text-white/90">Owner Name</Label>
+                  <Label htmlFor="ownerName" className="text-card-foreground">Owner Name</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="ownerName"
                       name="ownerName"
@@ -173,16 +173,16 @@ const SalonRegistration = () => {
                       required
                       value={formData.ownerName}
                       onChange={handleInputChange}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 pl-10"
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground pl-10"
                       placeholder="Your full name"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-white/90">Phone Number</Label>
+                  <Label htmlFor="phone" className="text-card-foreground">Phone Number</Label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="phone"
                       name="phone"
@@ -190,16 +190,16 @@ const SalonRegistration = () => {
                       required
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 pl-10"
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground pl-10"
                       placeholder="Your phone number"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address" className="text-white/90">Address</Label>
+                  <Label htmlFor="address" className="text-card-foreground">Address</Label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="address"
                       name="address"
@@ -207,7 +207,7 @@ const SalonRegistration = () => {
                       required
                       value={formData.address}
                       onChange={handleInputChange}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 pl-10"
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground pl-10"
                       placeholder="Salon address"
                     />
                   </div>
@@ -215,16 +215,16 @@ const SalonRegistration = () => {
               </div>
 
               {/* Account Information */}
-              <div className="space-y-4 pt-4 border-t border-white/20">
-                <h3 className="text-lg font-semibold text-white flex items-center">
-                  <User className="w-5 h-5 mr-2 text-yellow-300" />
+              <div className="space-y-4 pt-4 border-t border-border">
+                <h3 className="text-lg font-semibold text-card-foreground flex items-center">
+                  <User className="w-5 h-5 mr-2 text-primary" />
                   Account Information
                 </h3>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white/90">Email</Label>
+                  <Label htmlFor="email" className="text-card-foreground">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="email"
                       name="email"
@@ -232,16 +232,16 @@ const SalonRegistration = () => {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 pl-10"
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground pl-10"
                       placeholder="Enter your email"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-white/90">Password</Label>
+                  <Label htmlFor="password" className="text-card-foreground">Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="password"
                       name="password"
@@ -249,16 +249,16 @@ const SalonRegistration = () => {
                       required
                       value={formData.password}
                       onChange={handleInputChange}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 pl-10"
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground pl-10"
                       placeholder="Create a password"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-white/90">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-card-foreground">Confirm Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
                       name="confirmPassword"
@@ -266,7 +266,7 @@ const SalonRegistration = () => {
                       required
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 pl-10"
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground pl-10"
                       placeholder="Confirm your password"
                     />
                   </div>
@@ -275,7 +275,7 @@ const SalonRegistration = () => {
 
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-primary hover:opacity-90 text-white border-0 py-6 text-lg font-semibold transition-all duration-300 hover:scale-105 shadow-primary"
+                className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground border-0 py-6 text-lg font-semibold transition-all duration-300 hover:scale-105 shadow-primary"
                 disabled={loading}
               >
                 {loading ? 'Creating Account...' : 'Register Salon'}
@@ -283,9 +283,9 @@ const SalonRegistration = () => {
             </form>
 
             <div className="text-center">
-              <p className="text-white/70">
+              <p className="text-muted-foreground">
                 Already have an account?{' '}
-                <Link to="/auth" className="text-yellow-300 hover:text-yellow-200 font-medium">
+                <Link to="/auth" className="text-primary hover:text-primary/80 font-medium">
                   Sign in here
                 </Link>
               </p>
