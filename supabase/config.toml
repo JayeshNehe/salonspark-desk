@@ -1,1 +1,4 @@
 project_id = "vddehuqlaanzxxadnipo"
+
+[functions.create-receptionist]
+verify_jwt = false
