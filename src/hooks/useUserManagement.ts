@@ -87,7 +87,7 @@ export function useSalonHasReceptionist() {
   });
 }
 
-// Create receptionist account
+// Create receptionist account using edge function (doesn't sign out admin)
 export function useCreateReceptionist() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -97,36 +97,25 @@ export function useCreateReceptionist() {
     mutationFn: async ({ email, firstName, lastName, password }: CreateReceptionistData) => {
       if (!salonId) throw new Error('Salon not found');
 
-      // Create the user account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-          },
-          emailRedirectTo: `${window.location.origin}/`,
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      // Call edge function to create receptionist (uses admin API, doesn't affect current session)
+      const { data, error } = await supabase.functions.invoke('create-receptionist', {
+        body: {
+          email,
+          password,
+          firstName,
+          lastName,
         },
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Failed to create user');
-
-      // Assign receptionist role with email
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          user_id: authData.user.id,
-          salon_id: salonId,
-          role: 'receptionist',
-          email: email,
-        }]);
-
-      if (roleError) throw roleError;
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to create receptionist');
 
       return {
-        userId: authData.user.id,
+        userId: data.userId,
         email,
         password,
       };

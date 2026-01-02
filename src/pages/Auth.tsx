@@ -84,30 +84,43 @@ export default function Auth() {
         .eq('user_id', signedInUser.id)
         .maybeSingle();
 
-      const isAdmin = salonProfile !== null || userRoles?.some(r => r.role === 'admin');
-      const isReceptionist = userRoles?.some(r => r.role === 'receptionist');
+      // Determine user's role - salon owners are always admin
+      const isSalonOwner = salonProfile !== null;
+      const hasAdminRole = userRoles?.some(r => r.role === 'admin');
+      const hasReceptionistRole = userRoles?.some(r => r.role === 'receptionist');
 
-      // Validate login type matches user role
-      if (loginType === 'admin' && !isAdmin) {
-        await signOut();
-        toast({
-          title: "Access Denied",
-          description: "This login is for Admin/Owner only. Please use Receptionist login.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
+      // Admin = salon owner OR has admin role (but NOT if they only have receptionist role)
+      const isAdmin = isSalonOwner || hasAdminRole;
+      // Receptionist = has receptionist role AND is NOT a salon owner
+      const isReceptionist = hasReceptionistRole && !isSalonOwner;
+
+      // Validate login type matches user role strictly
+      if (loginType === 'admin') {
+        if (!isAdmin) {
+          await signOut();
+          toast({
+            title: "Access Denied",
+            description: "This login is for Admin/Owner only. Please use Receptionist login.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
       }
 
-      if (loginType === 'receptionist' && !isReceptionist) {
-        await signOut();
-        toast({
-          title: "Access Denied",
-          description: "This login is for Receptionist only. Please use Admin/Owner login.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
+      if (loginType === 'receptionist') {
+        if (!isReceptionist) {
+          await signOut();
+          toast({
+            title: "Access Denied",
+            description: hasAdminRole || isSalonOwner 
+              ? "Admins should use Admin/Owner login."
+              : "This login is for Receptionist only. No receptionist access found.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
       }
 
       toast({
